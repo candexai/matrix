@@ -81,6 +81,10 @@ It starts a local HTTPS server on port 8443 that impersonates the production hos
 - `POST /webhooks/elevenlabs/post-call`
 - `GET /analytics/dashboard?days=30` (+ `/summary`, `/trends`, `/agents`, `/outcomes`, `/leads`, `/heatmap`)
 
+## Deployment (production)
+
+Live at **https://edu.candexai.co.in** on `root@37.60.249.35` (Ubuntu 24.04): nginx (TLS via certbot, HTTP basic auth) → Next.js on 127.0.0.1:3000 and Express on 127.0.0.1:5001, both managed by pm2 from `/opt/matrix`. One-time provisioning: `deploy/setup-server.sh`; updates: `bash /opt/matrix/deploy/deploy.sh`. The full operations runbook (status, logs, restart, TLS, troubleshooting) is in [deploy/README.md](deploy/README.md).
+
 ## Developer helpers
 
 - `POST /api/v1/dev/seed?reset=1` (development only) — seeds 12 demo leads (tagged `demo`) and 8 demo voice conversations onto your first agent so every page can be exercised. `DELETE /api/v1/dev/seed` removes the demo data again without touching real records.

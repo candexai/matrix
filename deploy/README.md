@@ -88,5 +88,6 @@ pm2 monit                         # live CPU/memory
 | 502 from nginx | `pm2 status` — is the app online? `pm2 logs matrix-backend --lines 100` |
 | Backend exits at boot: "Could not connect to MongoDB" | Add `37.60.249.35` in Atlas → Network Access |
 | Calls finish but no transcript appears | `pm2 logs matrix-backend | grep webhook` — should show `processed post_call_transcription`; check the agent's webhook via `/api/v1/agents` (`postCallWebhook.url` must be the site URL) or `POST /api/v1/agents/webhooks/ensure` |
+| Zoho **Connect** shows "Invalid Redirect Uri" | Register `https://edu.candexai.co.in/api/v1/integrations/zoho/callback` under the Zoho app's *Authorized Redirect URIs* at https://api-console.zoho.in (India DC). Until then, connect from a laptop with `npm run zoho:bridge` — tokens land in the shared database. |
 | Zoho "not connected" after deploy | `ENCRYPTION_KEY` differs from the one used when Zoho was connected, or the token was revoked — reconnect from Integrations (needs the site callback URL registered in the Zoho API console) |
 | Frontend shows "Cannot reach the backend" | `NEXT_PUBLIC_API_URL` in `frontend/.env.production` must be `https://edu.candexai.co.in/api/v1`; rebuild with `deploy.sh` |

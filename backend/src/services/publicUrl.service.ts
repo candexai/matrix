@@ -28,6 +28,7 @@ async function detectNgrok(): Promise<string | null> {
 /** Public https base URL, or null when none is available (webhooks cannot be delivered). */
 export async function getPublicBackendUrl(): Promise<string | null> {
   if (isHttps(env.PUBLIC_BACKEND_URL)) return env.PUBLIC_BACKEND_URL;
+  if (process.env.DISABLE_NGROK_DETECT === "1") return null; // e.g. a local backend sharing production's database
   if (Date.now() - cached.at < TTL_MS) return cached.url;
   const url = await detectNgrok();
   cached = { url, at: Date.now() };

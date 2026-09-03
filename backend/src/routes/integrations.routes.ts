@@ -18,8 +18,7 @@ const router = Router();
 
 /** Catalog of integrations shown on the Integrations page. Only Zoho + ElevenLabs are live in this phase. */
 router.get("/", asyncHandler(async (req, res) => {
-  const integ = await zoho.getIntegration(req.workspaceId);
-  const leadCount = await Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" });
+  const [integ, leadCount, zohoOk] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" }), zoho.zohoConfigured(req.workspaceId)]);
   ok(res, {
     crm: [
       {
@@ -27,7 +26,7 @@ router.get("/", asyncHandler(async (req, res) => {
         name: "Zoho CRM",
         category: "crm",
         available: true,
-        configured: zoho.zohoConfigured(),
+        configured: zohoOk,
         connected: Boolean(integ && integ.status === "connected"),
         status: integ?.status ?? "disconnected",
         lastSyncAt: integ?.lastSyncAt ?? null,
@@ -36,7 +35,7 @@ router.get("/", asyncHandler(async (req, res) => {
         syncError: integ?.syncError ?? null,
         profile: integ?.profile ?? null,
         leadCount,
-        redirectUri: env.ZOHO_REDIRECT_URI,
+        redirectUri: (await zoho.getZohoApp(req.workspaceId))?.redirectUri ?? `${env.PUBLIC_BACKEND_URL}/api/v1/integrations/zoho/callback`,
       },
       { id: "hubspot", name: "HubSpot", category: "crm", available: false },
       { id: "salesforce", name: "Salesforce", category: "crm", available: false },
@@ -73,7 +72,7 @@ router.get("/zoho/callback", asyncHandler(async (req, res) => {
   if (!st) return redirect("error", "Invalid or expired OAuth state. Please try connecting again.");
   if (!q.code) return redirect("error", "Missing authorization code");
   try {
-    const tok = await zoho.exchangeCode(q.code, q["accounts-server"]);
+    const tok = await zoho.exchangeCode(st.workspaceId, q.code, q["accounts-server"]);
     const doc = await ZohoIntegration.findOneAndUpdate(
       { workspaceId: st.workspaceId },
       {
@@ -104,9 +103,10 @@ router.get("/zoho/callback", asyncHandler(async (req, res) => {
 }));
 
 router.get("/zoho/status", asyncHandler(async (req, res) => {
-  const [integ, leadCount] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" })]);
+  const [integ, leadCount, app] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" }), zoho.getZohoApp(req.workspaceId)]);
+  const defaultRedirect = `${env.PUBLIC_BACKEND_URL}/api/v1/integrations/zoho/callback`;
   ok(res, {
-    configured: zoho.zohoConfigured(),
+    configured: Boolean(app),
     connected: Boolean(integ && integ.status === "connected"),
     status: integ?.status ?? "disconnected",
     profile: integ?.profile ?? null,
@@ -120,9 +120,26 @@ router.get("/zoho/status", asyncHandler(async (req, res) => {
     syncStatus: integ?.syncStatus ?? "idle",
     syncError: integ?.syncError ?? null,
     leadCount,
-    redirectUri: env.ZOHO_REDIRECT_URI,
-    accountsUrl: env.ZOHO_ACCOUNTS_URL,
+    redirectUri: app?.redirectUri ?? defaultRedirect,
+    accountsUrl: app?.accountsUrl ?? env.ZOHO_ACCOUNTS_URL,
+    app: app ? { source: app.source, clientId: app.clientId, clientIdMasked: `${app.clientId.slice(0, 9)}…${app.clientId.slice(-4)}`, accountsUrl: app.accountsUrl, redirectUri: app.redirectUri } : null,
+    defaultRedirectUri: defaultRedirect,
   });
+}));
+
+/** Zoho OAuth client (from Zoho API console) managed from the UI. */
+router.get("/zoho/app", asyncHandler(async (req, res) => {
+  const app = await zoho.getZohoApp(req.workspaceId);
+  ok(res, app ? { source: app.source, clientId: app.clientId, accountsUrl: app.accountsUrl, redirectUri: app.redirectUri, hasSecret: true } : null);
+}));
+router.put("/zoho/app", asyncHandler(async (req, res) => {
+  const body = z.object({ clientId: z.string().min(10), clientSecret: z.string().optional(), accountsUrl: z.string().url().optional(), redirectUri: z.string().url().optional() }).parse(req.body);
+  const app = await zoho.saveZohoApp(req.workspaceId, body);
+  ok(res, { source: app.source, clientId: app.clientId, accountsUrl: app.accountsUrl, redirectUri: app.redirectUri, hasSecret: true });
+}));
+router.delete("/zoho/app", asyncHandler(async (req, res) => {
+  await zoho.clearZohoApp(req.workspaceId);
+  ok(res, { cleared: true, configured: await zoho.zohoConfigured(req.workspaceId) });
 }));
 
 router.post("/zoho/sync", asyncHandler(async (req, res) => {

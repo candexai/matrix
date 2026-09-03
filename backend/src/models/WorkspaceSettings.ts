@@ -4,6 +4,8 @@ export interface WorkspaceSettingsDoc extends Document {
   workspaceId: string;
   name: string;
   elevenWebhook?: { webhookId: string; url: string; secretEnc?: string; events: string[]; createdAt: Date };
+  /** Zoho OAuth client configured from the UI (overrides ZOHO_* env vars) */
+  zohoApp?: { clientId: string; clientSecretEnc: string; accountsUrl: string; redirectUri?: string; updatedAt: Date };
   defaultPhoneNumberId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -14,6 +16,7 @@ const WorkspaceSettingsSchema = new Schema<WorkspaceSettingsDoc>(
     workspaceId: { type: String, required: true, unique: true, default: "default" },
     name: { type: String, default: "Matrix" },
     elevenWebhook: { webhookId: String, url: String, secretEnc: String, events: [String], createdAt: Date },
+    zohoApp: { clientId: String, clientSecretEnc: String, accountsUrl: String, redirectUri: String, updatedAt: Date },
     defaultPhoneNumberId: String,
   },
   { timestamps: true }

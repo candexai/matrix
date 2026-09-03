@@ -28,6 +28,7 @@ import type {
   TestCallResult,
   TwilioImportInput,
   Voice,
+  ZohoAppSettings,
   ZohoFieldMeta,
   ZohoStatus,
 } from "@/lib/types";
@@ -404,6 +405,31 @@ export function useDeleteConversation() {
 export const useIntegrations = () => useQuery({ queryKey: ["integrations"], queryFn: () => api.get<IntegrationsResponse>("/integrations") });
 export const useZohoStatus = (opts: { refetchInterval?: number | false } = {}) => useQuery({ queryKey: ["zoho", "status"], queryFn: () => api.get<ZohoStatus>("/integrations/zoho/status"), refetchInterval: opts.refetchInterval ?? false });
 export const useZohoFields = (enabled = true) => useQuery({ queryKey: ["zoho", "fields"], queryFn: () => api.get<ZohoFieldMeta[]>("/integrations/zoho/fields"), enabled, staleTime: 10 * 60_000, retry: 0 });
+export const useZohoApp = () => useQuery({ queryKey: ["zoho", "app"], queryFn: () => api.get<ZohoAppSettings | null>("/integrations/zoho/app") });
+export function useSaveZohoApp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { clientId: string; clientSecret?: string; accountsUrl?: string; redirectUri?: string }) => api.put<ZohoAppSettings>("/integrations/zoho/app", input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["zoho"] });
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      toast.success("Zoho app saved — click Connect Zoho CRM");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+export function useClearZohoApp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete("/integrations/zoho/app"),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["zoho"] });
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      toast.success("Zoho app settings removed");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
 export function useZohoConnect() {
   return useMutation({
     mutationFn: () => api.post<{ authUrl: string }>("/integrations/zoho/connect"),

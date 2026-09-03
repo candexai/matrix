@@ -409,6 +409,16 @@ export interface ZohoStatus {
   leadCount: number;
   redirectUri: string;
   accountsUrl: string;
+  /** OAuth client in use (from UI settings or server env) */
+  app?: { source: "db" | "env"; clientId: string; clientIdMasked: string; accountsUrl: string; redirectUri: string } | null;
+  defaultRedirectUri?: string;
+}
+export interface ZohoAppSettings {
+  source: "db" | "env";
+  clientId: string;
+  accountsUrl: string;
+  redirectUri: string;
+  hasSecret: boolean;
 }
 
 export interface IntegrationItem {

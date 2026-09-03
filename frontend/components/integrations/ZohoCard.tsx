@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, Copy, ExternalLink, Info, Loader2, MoreHorizontal, RefreshCw, Table2, Unplug, Building2, Mail, User } from "lucide-react";
+import { AlertTriangle, Check, Copy, ExternalLink, Info, KeyRound, Loader2, MoreHorizontal, RefreshCw, Table2, Unplug, Building2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import type { IntegrationItem, ZohoStatus } from "@/lib/types";
 import { useZohoConnect, useZohoDisconnect, useZohoStatus, useZohoSync } from "@/hooks/api";
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tip } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/leads/ConfirmDialog";
 import { IntegrationCardShell, type CardStatus } from "./IntegrationCard";
+import { ZohoAppDialog } from "./ZohoAppDialog";
 
 function cardStatus(s?: ZohoStatus): CardStatus {
   if (!s) return "disconnected";
@@ -75,6 +76,16 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
   const syncing = sync.isPending || s?.syncStatus === "running";
   useEffect(() => setRunning(s?.syncStatus === "running"), [s?.syncStatus]);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [appOpen, setAppOpen] = useState(false);
+  const appDialog = <ZohoAppDialog open={appOpen} onOpenChange={setAppOpen} />;
+  const clientLine = s?.app ? (
+    <p className="text-xs text-muted-foreground">
+      Zoho client <span className="font-mono">{s.app.clientIdMasked}</span> · {s.app.source === "db" ? "configured in app settings" : "from server configuration"} ·{" "}
+      <button type="button" className="text-primary hover:underline" onClick={() => setAppOpen(true)}>
+        change
+      </button>
+    </p>
+  ) : null;
 
   const st = cardStatus(s);
 
@@ -120,59 +131,23 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
         className="sm:col-span-2"
         footer={
           <>
-            <Tip label="Add the client id and secret to backend/.env first">
-              <span className="inline-flex" tabIndex={0}>
-                <Button size="sm" disabled>
-                  Connect Zoho CRM
-                </Button>
-              </span>
-            </Tip>
-            <a href="https://api-console.zoho.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-              Open Zoho API console <ExternalLink className="size-3" />
-            </a>
+            <Button size="sm" onClick={() => setAppOpen(true)}>
+              <KeyRound /> Add Zoho app
+            </Button>
+            <span className="text-xs text-muted-foreground">Client ID + Secret from the Zoho API console (2 minutes).</span>
           </>
         }
       >
-        <div className="space-y-3">
-          <div className="flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-[13px] text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <span>
-              Add <code className="font-mono text-[12px]">ZOHO_CLIENT_ID</code> and <code className="font-mono text-[12px]">ZOHO_CLIENT_SECRET</code> to <code className="font-mono text-[12px]">backend/.env</code> to enable this integration.
-            </span>
+        <div className="space-y-2 text-[13px]">
+          <p className="text-muted-foreground">Connect your Zoho CRM Leads module: pull leads into My Leads and write collected answers back to empty fields.</p>
+          <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            <Info className="mt-0.5 size-4 shrink-0" />
+            <div>
+              No Zoho OAuth client is configured yet. Click <strong>Add Zoho app</strong> and follow the steps — it shows the exact callback URL to register.
+            </div>
           </div>
-          <ol className="space-y-2.5 text-[13px]">
-            <li className="flex gap-2.5">
-              <Step n={1} />
-              <span>
-                Create a <strong>Server-based application</strong> at{" "}
-                <a href="https://api-console.zoho.com" target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                  api-console.zoho.com
-                </a>
-                .
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <Step n={2} />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <span>Set the Authorized Redirect URI to:</span>
-                <MonoBox value={s.redirectUri} />
-              </div>
-            </li>
-            <li className="flex gap-2.5">
-              <Step n={3} />
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <span>
-                  Make sure <code className="font-mono text-[12px]">ZOHO_ACCOUNTS_URL</code> matches your data center (currently):
-                </span>
-                <MonoBox value={s.accountsUrl} />
-              </div>
-            </li>
-            <li className="flex gap-2.5">
-              <Step n={4} />
-              <span>Paste the Client ID and Client Secret into the backend .env and restart the backend.</span>
-            </li>
-          </ol>
         </div>
+        {appDialog}
       </IntegrationCardShell>
     );
   }
@@ -196,6 +171,9 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
               Connect Zoho CRM
             </Button>
             <span className="text-xs text-muted-foreground">You’ll be redirected to Zoho to authorize access to Leads.</span>
+            <Button size="sm" variant="outline" onClick={() => setAppOpen(true)}>
+              <KeyRound /> App settings
+            </Button>
           </>
         }
       >
@@ -222,6 +200,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
               {s.leadCount} previously synced lead{s.leadCount === 1 ? "" : "s"} are still available in My Leads.
             </p>
           ) : null}
+          {clientLine}
           {sameHost ? (
             <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
               <Info className="mt-0.5 size-4 shrink-0" />
@@ -249,6 +228,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
             </div>
           ) : null}
         </div>
+        {appDialog}
       </IntegrationCardShell>
     );
   }
@@ -285,6 +265,10 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
                     <Link href="/leads">
                       <Table2 /> Open My Leads
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setAppOpen(true)}>
+                    <KeyRound /> Zoho app settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem destructive onSelect={() => setConfirmDisconnect(true)}>
@@ -372,6 +356,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
         </div>
       </IntegrationCardShell>
 
+      {appDialog}
       <ConfirmDialog
         open={confirmDisconnect}
         onOpenChange={setConfirmDisconnect}

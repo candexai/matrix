@@ -7,32 +7,94 @@ import { env } from "../../config/env";
 import { ZohoIntegration, ZohoIntegrationDoc, ZohoFieldMeta } from "../../models/ZohoIntegration";
 import { OAuthState } from "../../models/OAuthState";
 import { encrypt, decrypt } from "../../utils/crypto";
+import { getWorkspaceSettings } from "../../models/WorkspaceSettings";
 import { HttpError } from "../../utils/http";
 
 export const ZOHO_SCOPES = ["ZohoCRM.modules.ALL", "ZohoCRM.settings.ALL", "ZohoCRM.users.READ", "ZohoCRM.org.READ"];
 
-export function zohoConfigured(): boolean {
-  return Boolean(env.ZOHO_CLIENT_ID && env.ZOHO_CLIENT_SECRET);
+export interface ZohoAppConfig {
+  clientId: string;
+  clientSecret: string;
+  accountsUrl: string;
+  redirectUri: string;
+  source: "db" | "env";
 }
 
-function assertConfigured() {
-  if (!zohoConfigured()) throw new HttpError(500, "Zoho is not configured: set ZOHO_CLIENT_ID and ZOHO_CLIENT_SECRET", "ZOHO_NOT_CONFIGURED");
+/** Zoho OAuth client for a workspace: UI-configured (WorkspaceSettings.zohoApp) wins over env vars. */
+export async function getZohoApp(workspaceId: string): Promise<ZohoAppConfig | null> {
+  const settings = await getWorkspaceSettings(workspaceId);
+  const defaultRedirect = `${env.PUBLIC_BACKEND_URL}/api/v1/integrations/zoho/callback`;
+  if (settings.zohoApp?.clientId && settings.zohoApp.clientSecretEnc) {
+    let secret = "";
+    try {
+      secret = decrypt(settings.zohoApp.clientSecretEnc);
+    } catch {
+      secret = "";
+    }
+    if (secret) {
+      return {
+        clientId: settings.zohoApp.clientId,
+        clientSecret: secret,
+        accountsUrl: (settings.zohoApp.accountsUrl || env.ZOHO_ACCOUNTS_URL).replace(/\/$/, ""),
+        redirectUri: settings.zohoApp.redirectUri || defaultRedirect,
+        source: "db",
+      };
+    }
+  }
+  if (env.ZOHO_CLIENT_ID && env.ZOHO_CLIENT_SECRET) {
+    return { clientId: env.ZOHO_CLIENT_ID, clientSecret: env.ZOHO_CLIENT_SECRET, accountsUrl: env.ZOHO_ACCOUNTS_URL, redirectUri: env.ZOHO_REDIRECT_URI, source: "env" };
+  }
+  return null;
+}
+
+export async function saveZohoApp(workspaceId: string, input: { clientId: string; clientSecret?: string; accountsUrl?: string; redirectUri?: string }): Promise<ZohoAppConfig> {
+  const settings = await getWorkspaceSettings(workspaceId);
+  const clientId = input.clientId.trim();
+  if (!/^1000\.[A-Z0-9]{20,}$/i.test(clientId)) throw new HttpError(400, "Client ID should look like 1000.XXXXXXXXXXXXXXXXXXXXXXXX", "VALIDATION_ERROR");
+  let secretEnc = settings.zohoApp?.clientSecretEnc;
+  if (input.clientSecret?.trim()) secretEnc = encrypt(input.clientSecret.trim());
+  if (!secretEnc) throw new HttpError(400, "Client Secret is required", "VALIDATION_ERROR");
+  settings.zohoApp = {
+    clientId,
+    clientSecretEnc: secretEnc,
+    accountsUrl: (input.accountsUrl || env.ZOHO_ACCOUNTS_URL).replace(/\/$/, ""),
+    redirectUri: input.redirectUri?.trim() || undefined,
+    updatedAt: new Date(),
+  };
+  await settings.save();
+  return (await getZohoApp(workspaceId))!;
+}
+
+export async function clearZohoApp(workspaceId: string): Promise<void> {
+  const settings = await getWorkspaceSettings(workspaceId);
+  settings.zohoApp = undefined;
+  await settings.save();
+}
+
+export async function zohoConfigured(workspaceId = env.DEFAULT_WORKSPACE_ID): Promise<boolean> {
+  return Boolean(await getZohoApp(workspaceId));
+}
+
+async function requireApp(workspaceId: string): Promise<ZohoAppConfig> {
+  const app = await getZohoApp(workspaceId);
+  if (!app) throw new HttpError(500, "Zoho is not configured: add the Zoho client in Integrations → Zoho CRM → App settings (or set ZOHO_CLIENT_ID / ZOHO_CLIENT_SECRET)", "ZOHO_NOT_CONFIGURED");
+  return app;
 }
 
 export async function buildAuthUrl(workspaceId: string): Promise<string> {
-  assertConfigured();
+  const app = await requireApp(workspaceId);
   const state = crypto.randomBytes(16).toString("hex");
   await OAuthState.create({ state, provider: "zoho", workspaceId });
   const params = new URLSearchParams({
     scope: ZOHO_SCOPES.join(","),
-    client_id: env.ZOHO_CLIENT_ID,
+    client_id: app.clientId,
     response_type: "code",
     access_type: "offline",
-    redirect_uri: env.ZOHO_REDIRECT_URI,
+    redirect_uri: app.redirectUri,
     prompt: "consent",
     state,
   });
-  return `${env.ZOHO_ACCOUNTS_URL}/oauth/v2/auth?${params.toString()}`;
+  return `${app.accountsUrl}/oauth/v2/auth?${params.toString()}`;
 }
 
 interface TokenResponse {
@@ -44,14 +106,14 @@ interface TokenResponse {
   error?: string;
 }
 
-export async function exchangeCode(code: string, accountsServer?: string): Promise<TokenResponse & { accountsServer: string }> {
-  assertConfigured();
-  const accounts = (accountsServer || env.ZOHO_ACCOUNTS_URL).replace(/\/$/, "");
+export async function exchangeCode(workspaceId: string, code: string, accountsServer?: string): Promise<TokenResponse & { accountsServer: string }> {
+  const app = await requireApp(workspaceId);
+  const accounts = (accountsServer || app.accountsUrl).replace(/\/$/, "");
   const body = new URLSearchParams({
     grant_type: "authorization_code",
-    client_id: env.ZOHO_CLIENT_ID,
-    client_secret: env.ZOHO_CLIENT_SECRET,
-    redirect_uri: env.ZOHO_REDIRECT_URI,
+    client_id: app.clientId,
+    client_secret: app.clientSecret,
+    redirect_uri: app.redirectUri,
     code,
   });
   const { data } = await axios.post<TokenResponse>(`${accounts}/oauth/v2/token`, body.toString(), {
@@ -63,12 +125,12 @@ export async function exchangeCode(code: string, accountsServer?: string): Promi
 }
 
 async function refreshAccessToken(integ: ZohoIntegrationDoc): Promise<void> {
-  assertConfigured();
+  const app = await requireApp(integ.workspaceId);
   if (!integ.refreshTokenEnc) throw new HttpError(401, "Zoho refresh token missing – reconnect Zoho", "ZOHO_TOKEN_EXPIRED");
   const body = new URLSearchParams({
     grant_type: "refresh_token",
-    client_id: env.ZOHO_CLIENT_ID,
-    client_secret: env.ZOHO_CLIENT_SECRET,
+    client_id: app.clientId,
+    client_secret: app.clientSecret,
     refresh_token: decrypt(integ.refreshTokenEnc),
   });
   const { data } = await axios.post<TokenResponse>(`${integ.accountsServer}/oauth/v2/token`, body.toString(), {

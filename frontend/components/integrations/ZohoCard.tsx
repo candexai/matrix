@@ -179,7 +179,12 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
 
   // ---- configured, not connected ----
   if (!s.connected) {
-    const remoteHost = remoteRedirectHost(s.redirectUri);
+    const redirectHost = remoteRedirectHost(s.redirectUri);
+    const thisHost = typeof window !== "undefined" ? window.location.hostname : "";
+    // Same host as the app → Zoho must have this exact callback registered on the client.
+    // Different host (e.g. production callback used from a laptop) → use the local bridge.
+    const remoteHost = redirectHost && redirectHost !== thisHost ? redirectHost : null;
+    const sameHost = Boolean(redirectHost) && redirectHost === thisHost;
     return (
       <IntegrationCardShell
         id="zoho"
@@ -216,6 +221,19 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
             <p className="text-muted-foreground">
               {s.leadCount} previously synced lead{s.leadCount === 1 ? "" : "s"} are still available in My Leads.
             </p>
+          ) : null}
+          {sameHost ? (
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[13px] text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+              <Info className="mt-0.5 size-4 shrink-0" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="font-medium">This callback URL must be registered on the Zoho app</div>
+                <p>
+                  If Zoho answers <em>Invalid Redirect Uri</em>, add the URL below under <strong>Authorized Redirect URIs</strong> for the client in the Zoho API console (India DC: api-console.zoho.in), save, then click Connect again.
+                </p>
+                <MonoBox value={s.redirectUri} />
+                <p className="text-xs opacity-80">Alternative without console access: connect from a laptop with <code className="font-mono">npm run zoho:bridge</code> — the tokens are shared with this site.</p>
+              </div>
+            </div>
           ) : null}
           {remoteHost ? (
             <div className="mt-3 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2.5 text-[13px] text-blue-900 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-100">

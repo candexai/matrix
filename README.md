@@ -60,7 +60,7 @@ It starts a local HTTPS server on port 8443 that impersonates the production hos
 
 ## How the Zoho ↔ voice loop works
 
-1. **Connect Zoho** on `/integrations` → OAuth tokens are stored (encrypted) in MongoDB (`zohointegrations`).
+1. **Connect Zoho** on `/integrations`. First add your Zoho OAuth client there (**Zoho CRM → Add Zoho app / App settings**): create a *Server-based Application* at the Zoho API console of your data centre (India: https://api-console.zoho.in) with the callback URL the dialog shows, then paste the Client ID and Secret. The client is stored encrypted per workspace and overrides the `ZOHO_*` env vars. Then click Connect → tokens are stored (encrypted) in MongoDB (`zohointegrations`).
 2. **Sync now** pulls Leads (all editable fields) into `leads`; each lead keeps every Zoho field in `fields` keyed by API name.
 3. **Attach a voice agent** on `/leads`: pick the agent, the outbound number and the Zoho fields to collect. The backend writes a matching `platform_settings.data_collection` schema to the ElevenLabs agent and points it at the post-call webhook.
 4. **Call** a lead (or a batch). The lead's details are passed as dynamic variables (`name`, `company`, `zoho_<field>`, `lead_id`…).
@@ -77,7 +77,7 @@ It starts a local HTTPS server on port 8443 that impersonates the production hos
 - `GET /lead-lists`, `POST /lead-lists`, `GET|PATCH|DELETE /lead-lists/:id`, `POST|DELETE /lead-lists/:id/leads`, `GET|PUT|DELETE /lead-lists/:id/agent-binding`
 - `GET|POST /leads` (`?listId=`), `GET|PATCH|DELETE /leads/:id`, `GET /leads/:id/conversations`, `POST /leads/:id/call`, `POST /leads/batch-call`, `GET|PUT|DELETE /leads/agent-binding` (workspace default; `?listId=` for a list)
 - `GET /conversations`, `POST /conversations/sync`, `GET /conversations/:id`, `POST /conversations/:id/refresh`, `GET /conversations/:id/audio`, `DELETE /conversations/:id`
-- `GET /integrations`, `POST /integrations/zoho/connect`, `GET /integrations/zoho/callback`, `GET /integrations/zoho/status`, `POST /integrations/zoho/sync`, `GET /integrations/zoho/fields`, `DELETE /integrations/zoho/disconnect`
+- `GET /integrations`, `GET|PUT|DELETE /integrations/zoho/app` (OAuth client settings), `POST /integrations/zoho/connect`, `GET /integrations/zoho/callback`, `GET /integrations/zoho/status`, `POST /integrations/zoho/sync`, `GET /integrations/zoho/fields`, `DELETE /integrations/zoho/disconnect`
 - `POST /webhooks/elevenlabs/post-call`
 - `GET /analytics/dashboard?days=30` (+ `/summary`, `/trends`, `/agents`, `/outcomes`, `/leads`, `/heatmap`)
 

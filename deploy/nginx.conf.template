@@ -34,7 +34,6 @@ server {
         proxy_pass http://127.0.0.1:5001;
         include /etc/nginx/snippets/matrix-proxy.conf;
         proxy_buffering off;              # audio streaming
-        proxy_read_timeout 180s;
     }
 
     # --- Next.js app ---

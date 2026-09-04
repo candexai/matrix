@@ -27,7 +27,24 @@ router.get("/", asyncHandler(async (req, res) => {
     filter.$or = [{ leadName: rx }, { phone: rx }, { summary: rx }, { summaryTitle: rx }, { agentName: rx }, { "transcript.message": rx }];
   }
   const [items, total, channelCounts] = await Promise.all([
-    Conversation.find(filter, { transcript: { $slice: 2 }, raw: 0 }).sort({ startedAt: -1, createdAt: -1 }).skip((page - 1) * limit).limit(limit),
+    // List payload: only what the inbox rows need (full document via GET /conversations/:id)
+    Conversation.find(filter, {
+      raw: 0,
+      dynamicVariables: 0,
+      extraction: 0,
+      dataCollection: 0,
+      evaluation: 0,
+      "zohoSync.skippedFields": 0,
+      "insights.merges": 0,
+      "insights.objections": 0,
+      "insights.keyQuote": 0,
+      "insights.nextBestAction": 0,
+      transcript: 0,
+    })
+      .sort({ startedAt: -1, createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
     Conversation.countDocuments(filter),
     Conversation.aggregate([{ $match: { workspaceId: req.workspaceId } }, { $group: { _id: "$channel", count: { $sum: 1 } } }]),
   ]);

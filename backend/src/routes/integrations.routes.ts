@@ -149,18 +149,20 @@ router.post("/zoho/sync", asyncHandler(async (req, res) => {
     throw new HttpError(409, "A sync is already running", "SYNC_RUNNING");
   }
   const stats = await syncZohoLeads(req.workspaceId, integ, { full });
-  // Catch up on finished calls too, so extracted values reach the leads (and Zoho) even when the
-  // post-call webhook could not reach this server.
-  let calls: { upserted: number; processed: number } | undefined;
-  try {
-    const c = await syncConversations(req.workspaceId, { sinceHours: 72, max: 100 });
-    const p = await reprocessPendingExtractions(req.workspaceId, { sinceHours: 72 });
-    await analyzePending(req.workspaceId, { sinceDays: 3, max: 30 }).catch((e) => console.warn("[insights] catch-up:", (e as Error).message));
-    calls = { upserted: c.upserted, processed: p.processed };
-  } catch (err) {
-    console.warn("[zoho sync] call catch-up skipped:", (err as Error).message);
-  }
-  ok(res, { ...stats, calls });
+  ok(res, { ...stats, callCatchUp: "started" });
+  // Catch up on finished calls in the background (transcripts, field extraction, insights), so the
+  // sync request returns as soon as the Zoho pull is done.
+  const ws = req.workspaceId;
+  void (async () => {
+    try {
+      const c = await syncConversations(ws, { sinceHours: 72, max: 100 });
+      const p = await reprocessPendingExtractions(ws, { sinceHours: 72 });
+      const a = await analyzePending(ws, { sinceDays: 3, max: 30 });
+      console.log(`[zoho sync] call catch-up: ${c.upserted} pulled, ${p.processed} lead updates, ${a.analyzed} analysed`);
+    } catch (err) {
+      console.warn("[zoho sync] call catch-up failed:", (err as Error).message);
+    }
+  })();
 }));
 
 router.get("/zoho/fields", asyncHandler(async (req, res) => {

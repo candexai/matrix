@@ -442,14 +442,14 @@ export function useZohoConnect() {
 export function useZohoSync() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (opts?: { full?: boolean }) => api.post<{ fetched: number; created: number; updated: number; lists?: number; durationMs: number; calls?: { upserted: number; processed: number } }>("/integrations/zoho/sync", { full: Boolean(opts?.full) }),
+    mutationFn: (opts?: { full?: boolean }) => api.post<{ fetched: number; created: number; updated: number; lists?: number; durationMs: number; calls?: { upserted: number; processed: number }; callCatchUp?: string }>("/integrations/zoho/sync", { full: Boolean(opts?.full) }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["zoho"] });
       qc.invalidateQueries({ queryKey: ["integrations"] });
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["lead-lists"] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
-      const calls = r.calls && (r.calls.upserted || r.calls.processed) ? ` · ${r.calls.upserted} call${r.calls.upserted === 1 ? "" : "s"} pulled, ${r.calls.processed} lead update${r.calls.processed === 1 ? "" : "s"} applied` : "";
+      const calls = r.calls && (r.calls.upserted || r.calls.processed) ? ` · ${r.calls.upserted} call${r.calls.upserted === 1 ? "" : "s"} pulled, ${r.calls.processed} lead update${r.calls.processed === 1 ? "" : "s"} applied` : r.callCatchUp ? " · call catch-up running in background" : "";
       toast.success(`Zoho sync complete · ${r.fetched} fetched, ${r.created} new, ${r.updated} updated${r.lists ? `, ${r.lists} lists` : ""}${calls}`);
     },
     onError: (e) => toast.error(errorMessage(e)),

@@ -6,6 +6,7 @@ import { pythonService } from "./services/elevenlabs/pythonService";
 import { getZohoApp } from "./services/zoho/zohoClient";
 import { ensureWebhooksForAllAgents } from "./services/agent.service";
 import { getPublicBackendUrl } from "./services/publicUrl.service";
+import { syncConversations } from "./services/conversations.service";
 
 async function main() {
   const db = await connectDatabase();
@@ -34,6 +35,22 @@ async function main() {
     };
     void tick();
     setInterval(tick, 60_000).unref();
+
+    // Self-healing reconciliation: pull any finished conversation the webhook did not deliver
+    // (runs the same post-call pipeline: lead fill, Zoho push, insights). Cheap: one list call.
+    const reconcileEveryMs = Number(process.env.CONVERSATION_RECONCILE_MS || 120_000);
+    if (reconcileEveryMs > 0) {
+      const reconcile = async () => {
+        try {
+          const r = await syncConversations(env.DEFAULT_WORKSPACE_ID, { sinceHours: 6, max: 50 });
+          if (r.upserted) console.log(`[reconcile] pulled ${r.upserted} conversation(s) from ElevenLabs`);
+        } catch (err) {
+          console.warn("[reconcile] failed:", (err as Error).message);
+        }
+      };
+      setTimeout(reconcile, 15_000).unref();
+      setInterval(reconcile, reconcileEveryMs).unref();
+    }
   });
 }
 

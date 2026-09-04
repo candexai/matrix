@@ -50,6 +50,8 @@ bash /opt/matrix/deploy/deploy.sh        # git pull → npm ci → build backend
 
 ## nginx
 
+The site enables gzip for proxied responses and HTTP/2 (`listen 443 ssl http2;`). Both matter a lot for users far from the server (Frankfurt): the conversation list went from 128 KB to 18 KB on the wire.
+
 ```bash
 nginx -t                          # validate config
 systemctl reload nginx            # apply

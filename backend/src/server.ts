@@ -42,8 +42,12 @@ async function main() {
     if (reconcileEveryMs > 0) {
       const reconcile = async () => {
         try {
-          const r = await syncConversations(env.DEFAULT_WORKSPACE_ID, { sinceHours: 6, max: 50 });
-          if (r.upserted) console.log(`[reconcile] pulled ${r.upserted} conversation(s) from ElevenLabs`);
+          const { Agent } = await import("./models/Agent");
+          const ids = (await Agent.distinct("workspaceId")).map(String);
+          for (const ws of ids.length ? ids : [env.DEFAULT_WORKSPACE_ID]) {
+            const r = await syncConversations(ws, { sinceHours: 6, max: 50 });
+            if (r.upserted) console.log(`[reconcile] ${ws}: pulled ${r.upserted} conversation(s) from ElevenLabs`);
+          }
         } catch (err) {
           console.warn("[reconcile] failed:", (err as Error).message);
         }

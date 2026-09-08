@@ -423,6 +423,19 @@ export interface KnowledgeDoc {
   dependentAgents?: number;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  workspaceId: string;
+  role: "owner" | "member";
+  createdAt: string;
+}
+export interface Me {
+  user: AuthUser;
+  workspace: { id: string; name: string };
+}
+
 export interface ConversationListResponse extends Paginated<Conversation> {
   channelCounts: Record<string, number>;
 }

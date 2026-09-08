@@ -1,8 +1,10 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { env } from "./config/env";
-import { workspace } from "./middleware/workspace.middleware";
+import { attachSession, requireAuth } from "./middleware/auth.middleware";
+import authRoutes from "./routes/auth.routes";
 import { errorHandler, notFound } from "./middleware/error.middleware";
 import agentsRoutes from "./routes/agents.routes";
 import catalogRoutes from "./routes/catalog.routes";
@@ -40,11 +42,17 @@ export function createApp() {
     })
   );
   app.use(express.urlencoded({ extended: true }));
-  app.use(workspace);
+  app.use(cookieParser());
+  app.use(attachSession);
 
   app.get("/health", (_req, res) => res.json({ ok: true, service: "matrix-backend", time: new Date().toISOString() }));
   app.get("/api/v1/health", (_req, res) => res.json({ ok: true, service: "matrix-backend", time: new Date().toISOString() }));
 
+  // ---- auth: public endpoints are the session routes, the ElevenLabs webhook, the Zoho OAuth
+  // callback (identified by its state) and health; everything else needs a session ----
+  const PUBLIC = [/^\/auth\//, /^\/webhooks\//, /^\/integrations\/zoho\/callback$/, /^\/health$/];
+  app.use("/api/v1", (req, res, next) => (PUBLIC.some((re) => re.test(req.path)) ? next() : requireAuth(req, res, next)));
+  app.use("/api/v1/auth", authRoutes);
   app.use("/api/v1/agents", agentsRoutes);
   app.use("/api/v1/phone-numbers", phoneNumbersRoutes);
   app.use("/api/v1/tools", toolsRouter);

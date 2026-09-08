@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api, API_URL, errorMessage } from "@/lib/api";
 import type {
+  AuthUser,
+  Me,
   Agent,
   AgentFormConfig,
   GenerateAgentInput,
@@ -35,6 +37,48 @@ import type {
   ZohoFieldMeta,
   ZohoStatus,
 } from "@/lib/types";
+
+// ---------- auth ----------
+export const useMe = () => useQuery({ queryKey: ["me"], queryFn: () => api.get<Me>("/auth/me"), retry: false, staleTime: 5 * 60_000 });
+export const useAuthStatus = () => useQuery({ queryKey: ["auth-status"], queryFn: () => api.get<{ hasAccounts: boolean }>("/auth/status"), retry: false });
+export function useLogin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { email: string; password: string }) => api.post<{ user: AuthUser; token: string }>("/auth/login", input),
+    onSuccess: (r) => {
+      qc.clear();
+      qc.setQueryData(["me"], { user: r.user, workspace: { id: r.user.workspaceId, name: "" } });
+    },
+  });
+}
+export function useSignup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name: string; email: string; password: string; company?: string }) => api.post<{ user: AuthUser; token: string }>("/auth/signup", input),
+    onSuccess: (r) => {
+      qc.clear();
+      qc.setQueryData(["me"], { user: r.user, workspace: { id: r.user.workspaceId, name: "" } });
+    },
+  });
+}
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post("/auth/logout"),
+    onSuccess: () => {
+      qc.clear();
+      if (typeof window !== "undefined") window.location.href = "/login";
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (input: { currentPassword: string; newPassword: string }) => api.post("/auth/change-password", input),
+    onSuccess: () => toast.success("Password changed"),
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
 
 // ---------- catalog / reference data ----------
 export const useCatalog = () => useQuery({ queryKey: ["catalog"], queryFn: () => api.get<Catalog>("/catalog"), staleTime: Infinity });

@@ -428,9 +428,10 @@ export async function reprocessPendingExtractions(workspaceId: string, opts: { s
 
 /** Entry point for the ElevenLabs post-call webhook. */
 export async function processPostCallEvent(payload: { type: string; event_timestamp?: number; data: any }): Promise<{ handled: string }> {
-  const workspaceId = env.DEFAULT_WORKSPACE_ID;
   const type = payload.type;
   const data = payload.data ?? {};
+  const owner = data.agent_id ? await Agent.findOne({ elevenAgentId: data.agent_id }, { workspaceId: 1 }) : null;
+  const workspaceId = owner?.workspaceId ?? env.DEFAULT_WORKSPACE_ID;
 
   if (type === "post_call_transcription") {
     const remote: RemoteConversation = {

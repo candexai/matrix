@@ -7,3 +7,4 @@ export * from "./OAuthState";
 export * from "./WorkspaceSettings";
 export * from "./LeadList";
 export * from "./InsightTag";
+export * from "./User";

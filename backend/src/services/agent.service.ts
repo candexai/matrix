@@ -238,8 +238,20 @@ export function describeProviders() {
  * Make sure every agent points at the current post-call webhook. Runs at startup and periodically,
  * so starting `ngrok http <port>` is enough to get transcripts delivered.
  */
-export async function ensureWebhooksForAllAgents(workspaceId = env.DEFAULT_WORKSPACE_ID): Promise<{ url: string | null; updated: number }> {
+export async function ensureWebhooksForAllAgents(workspaceId?: string): Promise<{ url: string | null; updated: number }> {
   if (!elevenlabs.configured) return { url: null, updated: 0 };
+  if (!workspaceId) {
+    // every workspace that owns agents
+    const ids = await Agent.distinct("workspaceId");
+    let url: string | null = null;
+    let updated = 0;
+    for (const id of ids.length ? ids : [env.DEFAULT_WORKSPACE_ID]) {
+      const r = await ensureWebhooksForAllAgents(String(id));
+      url = r.url ?? url;
+      updated += r.updated;
+    }
+    return { url, updated };
+  }
   const webhook = await ensureWorkspaceWebhook(workspaceId);
   if (!webhook) return { url: null, updated: 0 };
   const settings = await getWorkspaceSettings(workspaceId);

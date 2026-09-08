@@ -8,7 +8,7 @@ Server: `root@37.60.249.35` (Ubuntu 24.04) · Domain: **https://edu.candexai.co.
 | Frontend (Next.js) | pm2 app `matrix-frontend` → `next start` | 127.0.0.1:3000 |
 | nginx | site `/etc/nginx/sites-available/matrix`, TLS via certbot | 80 / 443 |
 
-Routing: `https://edu.candexai.co.in/api/*` → backend, everything else → frontend. The site is protected with HTTP basic auth (`/etc/nginx/matrix.htpasswd`); the ElevenLabs webhook (`/api/v1/webhooks/*`), the Zoho OAuth callback and `/health` are exempt.
+Routing: `https://edu.candexai.co.in/api/*` → backend, everything else → frontend. Access is controlled by the app's own login (`/login`, `/signup`; sessions signed with `JWT_SECRET` in `backend/.env`). The nginx basic-auth gate used before accounts existed has been removed; re-enable it by adding `auth_basic` lines back to `/etc/nginx/sites-available/matrix` if you ever need a second layer.
 
 ## Everyday commands
 

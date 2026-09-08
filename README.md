@@ -39,6 +39,7 @@ npm run dev                    # runs both servers (or npm run dev:backend / dev
 | `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_ACCOUNTS_URL` | Create a *Server-based application* at https://api-console.zoho.com with redirect URI `${PUBLIC_BACKEND_URL}/api/v1/integrations/zoho/callback`. Use the accounts host of your data centre (`accounts.zoho.in`, `accounts.zoho.com`, `accounts.zoho.eu`…). |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | Post-call transcript extraction (fills empty lead fields). Optional; without it only ElevenLabs data-collection results are used. |
 | `ENCRYPTION_KEY` | 32+ chars; encrypts OAuth tokens and webhook secrets at rest. |
+| `JWT_SECRET` | Signs login sessions (falls back to `ENCRYPTION_KEY`). Changing it signs everyone out. |
 
 ## Conversation Insights (dynamic analytics)
 
@@ -93,4 +94,6 @@ Live at **https://edu.candexai.co.in** on `root@37.60.249.35` (Ubuntu 24.04): ng
 - `npm --prefix backend run test:pipeline` — offline test of the config builder, HMAC verification and the post-call → lead-fill → Zoho-sync pipeline against an in-memory MongoDB.
 - Set `WEBHOOK_ALLOW_UNVERIFIED=true` (development only) to accept unsigned post-call webhooks while testing with tools like curl.
 
-Multi-tenancy is prepared (every document has `workspaceId`, header `x-workspace-id`), but there is no login yet — single default workspace.
+## Accounts & workspaces
+
+Email/password accounts (`POST /api/v1/auth/signup|login|logout`, `GET /api/v1/auth/me`, `POST /api/v1/auth/change-password`); sessions are 30-day JWTs in an httpOnly cookie signed with `JWT_SECRET`. Every document carries a `workspaceId`; a session fixes the workspace, so all API routes except auth, the ElevenLabs webhook, the Zoho OAuth callback and `/health` require a signed-in user. The **first account ever created owns the bootstrap workspace (`default`)**, i.e. everything created before accounts existed; later sign-ups get a fresh, empty workspace. Pages `/login` and `/signup`; the dashboard redirects to `/login` when signed out.

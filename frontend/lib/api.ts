@@ -21,10 +21,21 @@ function normalizeError(err: unknown): ApiError {
 class ApiClient {
   private http: AxiosInstance;
   constructor() {
-    this.http = axios.create({ baseURL: API_URL, timeout: 120000, headers: { "Content-Type": "application/json" } });
+    this.http = axios.create({ baseURL: API_URL, timeout: 120000, headers: { "Content-Type": "application/json" }, withCredentials: true });
     this.http.interceptors.response.use(
       (r) => r,
-      (err) => Promise.reject(normalizeError(err))
+      (err) => {
+        const status = (err as AxiosError)?.response?.status;
+        if (status === 401 && typeof window !== "undefined") {
+          const path = window.location.pathname;
+          const isAuthPage = path === "/login" || path === "/signup";
+          const isAuthCall = String((err as AxiosError)?.config?.url ?? "").includes("/auth/");
+          if (!isAuthPage && !isAuthCall) {
+            window.location.href = `/login?next=${encodeURIComponent(path + window.location.search)}`;
+          }
+        }
+        return Promise.reject(normalizeError(err));
+      }
     );
   }
   async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {

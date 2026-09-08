@@ -33,10 +33,12 @@ const toolBody = z.object({
   content_type: z.enum(["application/json", "application/x-www-form-urlencoded"]).optional(),
 });
 
+/** ElevenLabs allows exactly one of description | dynamic_variable | constant_value per parameter. */
 function literal(p: z.infer<typeof paramSchema>) {
-  const out: Record<string, unknown> = { type: p.type, description: p.description };
+  const out: Record<string, unknown> = { type: p.type };
   if (p.dynamic_variable) out.dynamic_variable = p.dynamic_variable;
-  if (p.constant_value !== undefined && p.constant_value !== "") out.constant_value = p.type === "number" || p.type === "integer" ? Number(p.constant_value) : p.type === "boolean" ? p.constant_value === "true" : p.constant_value;
+  else if (p.constant_value !== undefined && p.constant_value !== "") out.constant_value = p.type === "number" || p.type === "integer" ? Number(p.constant_value) : p.type === "boolean" ? p.constant_value === "true" : p.constant_value;
+  else out.description = p.description || p.name.replace(/_/g, " ");
   return out;
 }
 

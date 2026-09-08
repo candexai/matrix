@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Check, Copy, ExternalLink, Info, KeyRound, Loader2, MoreHorizontal, RefreshCw, Table2, Unplug, Building2, Mail, User } from "lucide-react";
+import { AlertTriangle, Check, Copy, Eraser, ExternalLink, Info, KeyRound, Loader2, MoreHorizontal, RefreshCw, Table2, Trash2, Unplug, Building2, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 import type { IntegrationItem, ZohoStatus } from "@/lib/types";
-import { useZohoConnect, useZohoDisconnect, useZohoStatus, useZohoSync } from "@/hooks/api";
+import { useZohoConnect, useZohoDisconnect, useZohoPurge, useZohoStatus, useZohoSync } from "@/hooks/api";
 import { errorMessage } from "@/lib/api";
 import { formatDateTime, formatDuration, relativeTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -70,14 +70,32 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
   const sync = useZohoSync();
   const connect = useZohoConnect();
   const disconnect = useZohoDisconnect();
+  const purge = useZohoPurge();
   const [running, setRunning] = useState(false);
   const status = useZohoStatus({ refetchInterval: running || sync.isPending ? 2000 : false });
   const s = status.data;
   const syncing = sync.isPending || s?.syncStatus === "running";
   useEffect(() => setRunning(s?.syncStatus === "running"), [s?.syncStatus]);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState(false);
+  const [confirmDisconnectPurge, setConfirmDisconnectPurge] = useState(false);
   const [appOpen, setAppOpen] = useState(false);
   const appDialog = <ZohoAppDialog open={appOpen} onOpenChange={setAppOpen} />;
+  const leadCount = s?.leadCount ?? 0;
+  const leadsLabel = `${new Intl.NumberFormat("en-US").format(leadCount)} lead${leadCount === 1 ? "" : "s"}`;
+  /** "Remove synced leads": deletes imported leads/tables/bindings from Matrix, keeps the Zoho connection. */
+  const purgeDialog = (
+    <ConfirmDialog
+      open={confirmPurge}
+      onOpenChange={(o) => (!purge.isPending ? setConfirmPurge(o) : undefined)}
+      title="Remove synced leads?"
+      description={`Deletes the ${leadsLabel} and tables imported from Zoho from Matrix. Your Zoho data is untouched and the connection stays; Sync now re-imports.`}
+      confirmLabel="Remove leads"
+      destructive
+      loading={purge.isPending}
+      onConfirm={() => purge.mutate(undefined, { onSuccess: () => setConfirmPurge(false) })}
+    />
+  );
   const clientLine = s?.app ? (
     <p className="text-xs text-muted-foreground">
       Zoho client <span className="font-mono">{s.app.clientIdMasked}</span> · {s.app.source === "db" ? "configured in app settings" : "from server configuration"} ·{" "}
@@ -197,7 +215,10 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
           </div>
           {s.leadCount ? (
             <p className="text-muted-foreground">
-              {s.leadCount} previously synced lead{s.leadCount === 1 ? "" : "s"} are still available in My Leads.
+              {s.leadCount} previously synced lead{s.leadCount === 1 ? "" : "s"} {s.leadCount === 1 ? "is" : "are"} still available in My Leads.{" "}
+              <button type="button" className="text-destructive hover:underline" onClick={() => setConfirmPurge(true)}>
+                Remove them
+              </button>
             </p>
           ) : null}
           {clientLine}
@@ -229,6 +250,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
           ) : null}
         </div>
         {appDialog}
+        {purgeDialog}
       </IntegrationCardShell>
     );
   }
@@ -271,8 +293,14 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
                     <KeyRound /> Zoho app settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setConfirmPurge(true)} disabled={syncing || !s.leadCount}>
+                    <Eraser /> Remove synced leads
+                  </DropdownMenuItem>
+                  <DropdownMenuItem destructive onSelect={() => setConfirmDisconnectPurge(true)} disabled={syncing}>
+                    <Trash2 /> Disconnect &amp; remove synced data
+                  </DropdownMenuItem>
                   <DropdownMenuItem destructive onSelect={() => setConfirmDisconnect(true)}>
-                    <Unplug /> Disconnect
+                    <Unplug /> Disconnect (keep leads)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -357,9 +385,10 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
       </IntegrationCardShell>
 
       {appDialog}
+      {purgeDialog}
       <ConfirmDialog
         open={confirmDisconnect}
-        onOpenChange={setConfirmDisconnect}
+        onOpenChange={(o) => (!disconnect.isPending ? setConfirmDisconnect(o) : undefined)}
         title="Disconnect Zoho CRM?"
         description="Revokes Matrix’s access token. Leads already synced stay in My Leads, but syncing and write-back stop until you reconnect."
         confirmLabel="Disconnect"
@@ -372,6 +401,26 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
               toast.message("You can reconnect at any time from this card.");
             },
           })
+        }
+      />
+      <ConfirmDialog
+        open={confirmDisconnectPurge}
+        onOpenChange={(o) => (!disconnect.isPending ? setConfirmDisconnectPurge(o) : undefined)}
+        title="Disconnect & remove synced data?"
+        description={`Revokes Matrix’s access to Zoho AND deletes the ${leadsLabel}, tables and agent bindings imported from Zoho. Your Zoho CRM data is untouched. Reconnect and Sync now to import again.`}
+        confirmLabel="Disconnect & remove"
+        destructive
+        loading={disconnect.isPending}
+        onConfirm={() =>
+          disconnect.mutate(
+            { purge: true },
+            {
+              onSuccess: () => {
+                setConfirmDisconnectPurge(false);
+                toast.message("You can reconnect at any time from this card.");
+              },
+            }
+          )
         }
       />
     </>

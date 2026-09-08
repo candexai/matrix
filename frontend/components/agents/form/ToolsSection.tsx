@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { uniq } from "../agent-utils";
-import { AddButton, CheckRow, Grid2, SectionCard, SubHeading, SwitchRow, TagInput } from "./primitives";
+import { HttpToolsPanel } from "./HttpToolsPanel";
+import { KnowledgePanel } from "./KnowledgePanel";
+import { AddButton, CheckRow, Grid2, SectionCard, SubHeading, SwitchRow } from "./primitives";
 import type { SectionProps } from "./sections";
 
 const TRANSFER_TYPES: { value: HumanTransferRule["transfer_type"]; label: string; description: string }[] = [
@@ -102,14 +104,9 @@ export function ToolsSection({ cfg, set, catalog, errors }: SectionProps) {
         ) : null}
       </div>
 
-      <Grid2>
-        <Field label="Custom tool IDs" hint="optional" help="Server/client tools created in the ElevenLabs dashboard (Tools → copy ID). Press Enter after each.">
-          <TagInput value={cfg.tool_ids} onChange={(v) => set("tool_ids", v)} placeholder="tool_01j…" mono ariaLabel="Tool IDs" />
-        </Field>
-        <Field label="Knowledge base document IDs" hint="optional" help="Documents uploaded under Knowledge Base in ElevenLabs. Attached with usage mode “auto”.">
-          <TagInput value={cfg.knowledge_base_ids} onChange={(v) => set("knowledge_base_ids", v)} placeholder="doc_01j…" mono ariaLabel="Knowledge base IDs" />
-        </Field>
-      </Grid2>
+      <HttpToolsPanel selected={cfg.tool_ids} onChange={(v) => set("tool_ids", v)} />
+
+      <KnowledgePanel selected={cfg.knowledge_base_ids} onChange={(v) => set("knowledge_base_ids", v)} />
     </SectionCard>
   );
 }

@@ -150,14 +150,19 @@ function buildBuiltInTools(cfg: AgentFormConfig, includeNulls: boolean): Record<
   return out;
 }
 
-export function buildConversationConfig(cfg: AgentFormConfig, mode: "create" | "update" = "create"): Record<string, unknown> {
+export type KnowledgeLookup = Map<string, { name: string; type: string }>;
+
+export function buildConversationConfig(cfg: AgentFormConfig, mode: "create" | "update" = "create", kb: KnowledgeLookup = new Map()): Record<string, unknown> {
   const prompt: Record<string, unknown> = {
     prompt: cfg.system_prompt,
     llm: cfg.llm,
     temperature: cfg.temperature,
     tool_ids: cfg.tool_ids ?? [],
     built_in_tools: buildBuiltInTools(cfg, mode === "update"),
-    knowledge_base: (cfg.knowledge_base_ids ?? []).map((id, i) => ({ id, type: "file", name: `Document ${i + 1}`, usage_mode: "auto" })),
+    knowledge_base: (cfg.knowledge_base_ids ?? []).map((id, i) => {
+      const meta = kb.get(id);
+      return { id, type: meta?.type ?? "file", name: meta?.name ?? `Document ${i + 1}`, usage_mode: "auto" };
+    }),
   };
   if (cfg.max_tokens && cfg.max_tokens > 0) prompt.max_tokens = cfg.max_tokens;
   if (cfg.reasoning_effort) prompt.reasoning_effort = cfg.reasoning_effort;

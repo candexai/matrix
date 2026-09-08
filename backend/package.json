@@ -2,7 +2,7 @@
   "name": "matrix-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Matrix x CandexAI backend \u2014 ElevenLabs voice agents, Zoho CRM leads, conversations, analytics",
+  "description": "Matrix x CandexAI backend — ElevenLabs voice agents, Zoho CRM leads, conversations, analytics",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
@@ -19,11 +19,13 @@
     "express": "^4.21.2",
     "helmet": "^8.2.0",
     "mongoose": "^8.9.5",
+    "multer": "^2.3.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/multer": "^2.2.0",
     "@types/node": "^20.17.0",
     "mongodb-memory-server": "^10.4.3",
     "ts-node-dev": "^2.0.0",

@@ -1,12 +1,15 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { api, errorMessage } from "@/lib/api";
+import { api, API_URL, errorMessage } from "@/lib/api";
 import type {
   Agent,
   AgentFormConfig,
   GenerateAgentInput,
   GenerateAgentResult,
+  HttpTool,
+  HttpToolInput,
+  KnowledgeDoc,
   AnalyticsDashboard,
   BatchCallResult,
   CallResult,
@@ -158,6 +161,76 @@ export function useImportAgent() {
   });
 }
 export const getSignedUrl = (id: string) => api.get<{ signed_url: string; agent_id: string }>(`/agents/${id}/signed-url`);
+
+// ---------- HTTP tools (ElevenLabs webhook tools) ----------
+export const useHttpTools = () => useQuery({ queryKey: ["tools"], queryFn: () => api.get<HttpTool[]>("/tools"), staleTime: 60_000 });
+export function useCreateHttpTool() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: HttpToolInput) => api.post<HttpTool>("/tools", input),
+    onSuccess: (t) => {
+      qc.invalidateQueries({ queryKey: ["tools"] });
+      toast.success(`Tool "${t.name}" created`);
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+export function useUpdateHttpTool() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: HttpToolInput & { id: string }) => api.patch<HttpTool>(`/tools/${id}`, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tools"] });
+      toast.success("Tool updated");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+export function useDeleteHttpTool() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/tools/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tools"] });
+      toast.success("Tool deleted");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
+// ---------- knowledge base (ElevenLabs documents) ----------
+export const useKnowledgeDocs = () => useQuery({ queryKey: ["knowledge-base"], queryFn: () => api.get<KnowledgeDoc[]>("/knowledge-base"), staleTime: 60_000 });
+export function useAddKnowledgeDoc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { kind: "url"; url: string; name?: string } | { kind: "text"; text: string; name?: string } | { kind: "file"; file: File; name?: string }) => {
+      if (input.kind === "url") return api.post<{ id: string; name: string }>("/knowledge-base/url", { url: input.url, name: input.name });
+      if (input.kind === "text") return api.post<{ id: string; name: string }>("/knowledge-base/text", { text: input.text, name: input.name });
+      const fd = new FormData();
+      fd.append("file", input.file);
+      if (input.name) fd.append("name", input.name);
+      const { default: axios } = await import("axios");
+      const { data } = await axios.post(`${API_URL}/knowledge-base/file`, fd, { timeout: 180000 });
+      return data.data as { id: string; name: string };
+    },
+    onSuccess: (d) => {
+      qc.invalidateQueries({ queryKey: ["knowledge-base"] });
+      toast.success(`Document "${d.name}" added`);
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+export function useDeleteKnowledgeDoc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/knowledge-base/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["knowledge-base"] });
+      toast.success("Document deleted");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
 
 // ---------- leads ----------
 export interface LeadFilters {
@@ -430,6 +503,21 @@ export function useClearZohoApp() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 }
+export function useZohoPurge() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ leads: number; lists: number; bindings: number }>("/integrations/zoho/purge"),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["zoho"] });
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead-lists"] });
+      qc.invalidateQueries({ queryKey: ["lead-binding"] });
+      toast.success(`Removed ${r.leads} synced leads and ${r.lists} tables (connection kept)`);
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
 export function useZohoConnect() {
   return useMutation({
     mutationFn: () => api.post<{ authUrl: string }>("/integrations/zoho/connect"),
@@ -458,11 +546,14 @@ export function useZohoSync() {
 export function useZohoDisconnect() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => api.delete("/integrations/zoho/disconnect"),
-    onSuccess: () => {
+    mutationFn: (opts?: { purge?: boolean }) => api.delete<{ disconnected: boolean; purged?: { leads: number; lists: number } }>("/integrations/zoho/disconnect", opts?.purge ? { purge: "true" } : undefined),
+    onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["zoho"] });
       qc.invalidateQueries({ queryKey: ["integrations"] });
-      toast.success("Zoho disconnected");
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead-lists"] });
+      qc.invalidateQueries({ queryKey: ["lead-binding"] });
+      toast.success(r.purged ? `Zoho disconnected · removed ${r.purged.leads} leads and ${r.purged.lists} tables` : "Zoho disconnected");
     },
     onError: (e) => toast.error(errorMessage(e)),
   });

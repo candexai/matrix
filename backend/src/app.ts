@@ -15,6 +15,7 @@ import devRoutes from "./routes/dev.routes";
 import phoneNumbersRoutes from "./routes/phoneNumbers.routes";
 import leadListsRoutes from "./routes/leadLists.routes";
 import insightsRoutes from "./routes/insights.routes";
+import { toolsRouter, knowledgeRouter } from "./routes/toolsKb.routes";
 
 export function createApp() {
   const app = express();
@@ -46,6 +47,8 @@ export function createApp() {
 
   app.use("/api/v1/agents", agentsRoutes);
   app.use("/api/v1/phone-numbers", phoneNumbersRoutes);
+  app.use("/api/v1/tools", toolsRouter);
+  app.use("/api/v1/knowledge-base", knowledgeRouter);
   app.use("/api/v1", catalogRoutes);
   app.use("/api/v1/lead-lists", leadListsRoutes);
   app.use("/api/v1/leads", leadsRoutes);

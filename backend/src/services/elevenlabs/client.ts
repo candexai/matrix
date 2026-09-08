@@ -77,6 +77,29 @@ export interface RemoteConversation {
   has_audio?: boolean;
 }
 
+export interface ElevenTool {
+  id: string;
+  tool_config: {
+    type: string;
+    name: string;
+    description: string;
+    response_timeout_secs?: number;
+    api_schema?: { url: string; method?: string; request_headers?: Record<string, string>; query_params_schema?: unknown; request_body_schema?: unknown; path_params_schema?: unknown };
+    [k: string]: unknown;
+  };
+  access_info?: unknown;
+  usage_stats?: unknown;
+}
+
+export interface ElevenKnowledgeDoc {
+  id: string;
+  name: string;
+  type: "file" | "url" | "text" | "folder" | string;
+  metadata?: { created_at_unix_secs?: number; last_updated_at_unix_secs?: number; size_bytes?: number };
+  url?: string;
+  dependent_agents?: unknown[];
+}
+
 class ElevenLabsClient {
   private http: AxiosInstance;
 
@@ -241,6 +264,70 @@ class ElevenLabsClient {
   async deleteConversation(conversationId: string): Promise<void> {
     this.assertConfigured();
     await this.http.delete(`/v1/convai/conversations/${encodeURIComponent(conversationId)}`);
+  }
+
+  // ---------- Tools (webhook / HTTP tools) ----------
+  async listTools(): Promise<ElevenTool[]> {
+    this.assertConfigured();
+    const { data } = await this.http.get("/v1/convai/tools");
+    return data?.tools ?? [];
+  }
+
+  async createTool(tool_config: Record<string, unknown>): Promise<ElevenTool> {
+    this.assertConfigured();
+    const { data } = await this.http.post("/v1/convai/tools", { tool_config });
+    return data;
+  }
+
+  async updateTool(id: string, tool_config: Record<string, unknown>): Promise<ElevenTool> {
+    this.assertConfigured();
+    const { data } = await this.http.patch(`/v1/convai/tools/${encodeURIComponent(id)}`, { tool_config });
+    return data;
+  }
+
+  async deleteTool(id: string): Promise<void> {
+    this.assertConfigured();
+    await this.http.delete(`/v1/convai/tools/${encodeURIComponent(id)}`);
+  }
+
+  // ---------- Knowledge base ----------
+  async listKnowledgeBase(): Promise<ElevenKnowledgeDoc[]> {
+    this.assertConfigured();
+    const out: ElevenKnowledgeDoc[] = [];
+    let cursor: string | undefined;
+    for (let i = 0; i < 10; i++) {
+      const { data } = await this.http.get("/v1/convai/knowledge-base", { params: { page_size: 100, cursor } });
+      out.push(...(data?.documents ?? []));
+      if (!data?.has_more || !data?.next_cursor) break;
+      cursor = data.next_cursor;
+    }
+    return out;
+  }
+
+  async createKnowledgeUrl(url: string, name?: string): Promise<{ id: string; name: string }> {
+    this.assertConfigured();
+    const { data } = await this.http.post("/v1/convai/knowledge-base/url", { url, name: name || undefined });
+    return data;
+  }
+
+  async createKnowledgeText(text: string, name?: string): Promise<{ id: string; name: string }> {
+    this.assertConfigured();
+    const { data } = await this.http.post("/v1/convai/knowledge-base/text", { text, name: name || undefined });
+    return data;
+  }
+
+  async createKnowledgeFile(file: { buffer: Buffer; filename: string; mimetype: string }, name?: string): Promise<{ id: string; name: string }> {
+    this.assertConfigured();
+    const form = new FormData();
+    form.append("file", new Blob([new Uint8Array(file.buffer)], { type: file.mimetype || "application/octet-stream" }), file.filename);
+    if (name) form.append("name", name);
+    const { data } = await this.http.post("/v1/convai/knowledge-base/file", form, { headers: { "Content-Type": "multipart/form-data" }, timeout: 120000 });
+    return data;
+  }
+
+  async deleteKnowledgeDoc(id: string): Promise<void> {
+    this.assertConfigured();
+    await this.http.delete(`/v1/convai/knowledge-base/${encodeURIComponent(id)}`, { params: { force: true } });
   }
 
   // ---------- Workspace webhooks (post-call) ----------

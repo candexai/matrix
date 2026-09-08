@@ -381,6 +381,48 @@ export interface GenerateAgentResult {
   binding?: LeadAgentBinding;
 }
 
+export interface ToolParam {
+  name: string;
+  type: "string" | "number" | "integer" | "boolean";
+  description: string;
+  required: boolean;
+  location: "query" | "body" | "path";
+  dynamic_variable?: string;
+  constant_value?: string | number | boolean;
+}
+export interface HttpTool {
+  id: string;
+  type: string;
+  name: string;
+  description: string;
+  url: string;
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  headers: Record<string, string>;
+  params: ToolParam[];
+  response_timeout_secs: number;
+  usage_stats?: unknown;
+}
+export interface HttpToolInput {
+  name: string;
+  description: string;
+  url: string;
+  method: HttpTool["method"];
+  headers?: Record<string, string>;
+  params?: (Omit<ToolParam, "constant_value"> & { constant_value?: string })[];
+  response_timeout_secs?: number;
+  disable_interruptions?: boolean;
+  content_type?: "application/json" | "application/x-www-form-urlencoded";
+}
+export interface KnowledgeDoc {
+  id: string;
+  name: string;
+  type: "file" | "url" | "text" | string;
+  url?: string;
+  createdAt?: string | null;
+  sizeBytes?: number | null;
+  dependentAgents?: number;
+}
+
 export interface ConversationListResponse extends Paginated<Conversation> {
   channelCounts: Record<string, number>;
 }

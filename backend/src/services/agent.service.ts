@@ -2,7 +2,7 @@ import { Agent, AgentDoc, AgentFormConfig } from "../models/Agent";
 import { getWorkspaceSettings } from "../models/WorkspaceSettings";
 import { elevenlabs, RemoteAgent } from "./elevenlabs/client";
 import { pythonService } from "./elevenlabs/pythonService";
-import { buildConversationConfig, buildPlatformSettings, formFromRemote, withDefaults } from "./elevenlabs/configBuilder";
+import { buildConversationConfig, buildPlatformSettings, formFromRemote, withDefaults, KnowledgeLookup } from "./elevenlabs/configBuilder";
 import { ttsModelSupportsLanguage } from "../constants/catalog";
 import { encrypt } from "../utils/crypto";
 import { HttpError, upstreamMessage } from "../utils/http";
@@ -13,6 +13,18 @@ export interface AgentInput {
   name: string;
   description?: string;
   config: Partial<AgentFormConfig>;
+}
+
+/** Names/types of the knowledge-base docs an agent references (ElevenLabs needs both in the locator). */
+async function knowledgeLookup(ids: string[]): Promise<KnowledgeLookup> {
+  const map: KnowledgeLookup = new Map();
+  if (!ids?.length) return map;
+  try {
+    for (const d of await elevenlabs.listKnowledgeBase()) map.set(d.id, { name: d.name, type: d.type });
+  } catch (err) {
+    console.warn("[agents] knowledge base lookup failed:", upstreamMessage(err));
+  }
+  return map;
 }
 
 function validateConfig(cfg: AgentFormConfig) {
@@ -101,7 +113,7 @@ export async function createAgent(workspaceId: string, input: AgentInput): Promi
   if (!input.name?.trim()) throw new HttpError(400, "Agent name is required", "VALIDATION_ERROR");
 
   const webhook = cfg.post_call_webhook_enabled ? await ensureWorkspaceWebhook(workspaceId) : null;
-  const conversation_config = buildConversationConfig(cfg, "create");
+  const conversation_config = buildConversationConfig(cfg, "create", await knowledgeLookup(cfg.knowledge_base_ids));
   const platform_settings = buildPlatformSettings(cfg, webhook ? { webhookId: webhook.webhookId, events: cfg.post_call_webhook_events } : null);
 
   const { agentId, provider } = await providerCreate(input.name.trim(), conversation_config, platform_settings);
@@ -131,7 +143,7 @@ export async function updateAgent(workspaceId: string, id: string, input: Partia
   const name = input.name?.trim() || doc.name;
 
   const webhook = cfg.post_call_webhook_enabled ? await ensureWorkspaceWebhook(workspaceId) : null;
-  const conversation_config = buildConversationConfig(cfg, "update");
+  const conversation_config = buildConversationConfig(cfg, "update", await knowledgeLookup(cfg.knowledge_base_ids));
   const platform_settings = buildPlatformSettings(cfg, webhook ? { webhookId: webhook.webhookId, events: cfg.post_call_webhook_events } : null);
   if (!webhook) platform_settings.workspace_overrides = { webhooks: { post_call_webhook_id: null, events: [] } };
 

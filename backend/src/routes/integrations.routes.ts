@@ -5,6 +5,9 @@ import { env } from "../config/env";
 import { ZohoIntegration } from "../models/ZohoIntegration";
 import { OAuthState } from "../models/OAuthState";
 import { Lead } from "../models/Lead";
+import { LeadList } from "../models/LeadList";
+import { LeadAgentBinding } from "../models/LeadAgentBinding";
+import { Conversation } from "../models/Conversation";
 import { encrypt } from "../utils/crypto";
 import * as zoho from "../services/zoho/zohoClient";
 import { syncZohoLeads } from "../services/zoho/zohoSync";
@@ -171,14 +174,46 @@ router.get("/zoho/fields", asyncHandler(async (req, res) => {
   ok(res, fields);
 }));
 
+/** Remove everything that came from Zoho (leads, lead tables, per-table agent bindings). Conversations are kept. */
+async function purgeZohoData(workspaceId: string) {
+  const lists = await LeadList.find({ workspaceId, source: "zoho" }, { _id: 1 });
+  const listIds = lists.map((l) => String(l._id));
+  const leads = await Lead.find({ workspaceId, source: "zoho" }, { _id: 1 });
+  const leadIds = leads.map((l) => l._id);
+  const [convs, delLeads, delLists, delBindings] = await Promise.all([
+    Conversation.updateMany({ workspaceId, leadId: { $in: leadIds } }, { $unset: { leadId: 1 } }),
+    Lead.deleteMany({ workspaceId, source: "zoho" }),
+    LeadList.deleteMany({ workspaceId, source: "zoho" }),
+    listIds.length ? LeadAgentBinding.deleteMany({ workspaceId, listId: { $in: listIds } }) : Promise.resolve({ deletedCount: 0 }),
+  ]);
+  if (listIds.length) await Lead.updateMany({ workspaceId, listIds: { $in: listIds } }, { $pull: { listIds: { $in: listIds } } });
+  return { leads: delLeads.deletedCount, lists: delLists.deletedCount, bindings: delBindings.deletedCount ?? 0, conversationsUnlinked: convs.modifiedCount };
+}
+
+router.post("/zoho/purge", asyncHandler(async (req, res) => {
+  const result = await purgeZohoData(req.workspaceId);
+  const integ = await zoho.getIntegration(req.workspaceId);
+  if (integ) {
+    integ.lastSyncAt = undefined;
+    integ.lastSyncStats = undefined;
+    await integ.save();
+  }
+  ok(res, result);
+}));
+
 router.delete("/zoho/disconnect", asyncHandler(async (req, res) => {
+  const purge = req.query.purge === "true" || req.body?.purge === true;
   const integ = await zoho.getIntegration(req.workspaceId);
   if (integ) {
     await zoho.revokeToken(integ);
-    integ.status = "revoked";
-    await integ.save();
+    if (purge) await integ.deleteOne();
+    else {
+      integ.status = "revoked";
+      await integ.save();
+    }
   }
-  ok(res, { disconnected: true });
+  const purged = purge ? await purgeZohoData(req.workspaceId) : undefined;
+  ok(res, { disconnected: true, purged });
 }));
 
 export default router;

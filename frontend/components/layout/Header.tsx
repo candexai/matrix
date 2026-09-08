@@ -1,13 +1,17 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Moon, Sun, LogOut, User } from "lucide-react";
+import { Coins, KeyRound, LogOut, Moon, Settings2, Sun } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { Usage } from "@/lib/types";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, initials, titleCase } from "@/lib/utils";
+import { useLogout, useMe } from "@/hooks/api";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tip } from "@/components/ui/tooltip";
+import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 
 function BalanceChip() {
   const { data } = useQuery({ queryKey: ["usage"], queryFn: () => api.get<Usage>("/usage"), staleTime: 5 * 60_000, retry: 0 });
@@ -51,34 +55,75 @@ function ThemeToggle() {
   );
 }
 
-export function Header() {
+function AccountMenu() {
+  const me = useMe();
+  const logout = useLogout();
+  const [pwOpen, setPwOpen] = useState(false);
+
+  // Right after login/signup the cached `me` carries an empty workspace name — fetch the real one once.
+  const refreshed = useRef(false);
+  const { data, refetch } = me;
+  useEffect(() => {
+    if (data && !data.workspace.name && !refreshed.current) {
+      refreshed.current = true;
+      void refetch();
+    }
+  }, [data, refetch]);
+
+  if (!data) return <Skeleton className="size-9 rounded-full" />;
+  const { user, workspace } = data;
+  const avatar = initials(user.name);
+
   return (
-    <header className="sticky top-0 z-20 flex h-[72px] items-center justify-end gap-2 bg-background/80 px-7 backdrop-blur">
-      <BalanceChip />
-      <ThemeToggle />
+    <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" className="flex size-9 items-center justify-center rounded-full border border-border bg-card font-heading text-[15px] hover:bg-muted" aria-label="Account">
-            A
+          <button type="button" aria-label="Account menu" className="flex size-9 items-center justify-center rounded-full border border-border bg-card font-heading text-[14px] hover:bg-muted">
+            {avatar}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-          <div className="px-2 pb-2 text-sm">
-            <div className="font-medium">Matrix × CandexAI</div>
-            <div className="text-xs text-muted-foreground">default workspace</div>
+        <DropdownMenuContent align="end" className="w-64">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full brand-gradient font-heading text-[14px] text-white">{avatar}</div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">{user.name}</div>
+              <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+            </div>
           </div>
           <DropdownMenuSeparator />
+          <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+          <div className="flex items-center justify-between gap-2 px-2 pb-2">
+            <span className="truncate text-sm">{workspace.name || "Your workspace"}</span>
+            <Badge variant={user.role === "owner" ? "soft" : "secondary"}>{titleCase(user.role)}</Badge>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setPwOpen(true)}>
+            <KeyRound /> Change password
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/integrations">
-              <User /> Integrations & settings
+              <Settings2 /> Integrations & settings
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
-            <LogOut /> Sign out (coming soon)
+          <DropdownMenuSeparator />
+          <DropdownMenuItem destructive disabled={logout.isPending} onSelect={() => logout.mutate()}>
+            <LogOut /> Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
+    </>
+  );
+}
+
+export function Header() {
+  const me = useMe();
+  return (
+    <header className="sticky top-0 z-20 flex h-[72px] items-center justify-end gap-2 bg-background/80 px-7 backdrop-blur">
+      {/* Only poll usage once we know there's a session — avoids a stray 401 redirect racing the auth gate. */}
+      {me.data ? <BalanceChip /> : null}
+      <ThemeToggle />
+      <AccountMenu />
     </header>
   );
 }

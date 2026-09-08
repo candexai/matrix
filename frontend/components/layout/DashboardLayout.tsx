@@ -1,6 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SidebarProvider, useSidebar } from "./SidebarContext";
@@ -12,7 +13,9 @@ function Frame({ children }: { children: ReactNode }) {
       <Sidebar />
       <div style={{ marginLeft: width }} className="flex min-h-svh min-w-0 flex-1 flex-col transition-[margin] duration-200">
         <Header />
-        <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+        <main className="flex min-w-0 flex-1 flex-col">
+          <RequireAuth>{children}</RequireAuth>
+        </main>
       </div>
     </div>
   );

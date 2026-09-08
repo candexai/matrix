@@ -1,18 +1,18 @@
 "use client";
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { ArrowUpRight, Check, Server } from "lucide-react";
+import { Check } from "lucide-react";
 import type { IntegrationItem } from "@/lib/types";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "./BrandIcons";
 import { INTEGRATION_DESCRIPTIONS } from "./integrationCopy";
 
-export type CardStatus = "connected" | "disconnected" | "setup" | "soon" | "error";
+export type CardStatus = "connected" | "server-key" | "disconnected" | "setup" | "soon" | "error";
 
 const STATUS_META: Record<CardStatus, { label: string; variant: NonNullable<BadgeProps["variant"]> }> = {
   connected: { label: "Connected", variant: "success" },
+  "server-key": { label: "Using server key", variant: "info" },
   disconnected: { label: "Not connected", variant: "outline" },
   setup: { label: "Needs setup", variant: "warning" },
   soon: { label: "Coming soon", variant: "secondary" },
@@ -64,41 +64,5 @@ export function ComingSoonCard({ item }: { item: IntegrationItem }) {
         </>
       }
     />
-  );
-}
-
-export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
-  const connected = Boolean(item.connected);
-  return (
-    <IntegrationCardShell
-      id={item.id}
-      name={item.name}
-      status={connected ? "connected" : "setup"}
-      footer={
-        <>
-          <Link href="/agents" className={buttonVariants({ variant: connected ? "default" : "outline", size: "sm" })}>
-            Manage agents <ArrowUpRight />
-          </Link>
-          {!connected ? <span className="text-xs text-muted-foreground">Add ELEVENLABS_API_KEY to backend/.env</span> : null}
-        </>
-      }
-    >
-      <dl className="space-y-1.5 text-[13px]">
-        <div className="flex items-center justify-between gap-3">
-          <dt className="text-muted-foreground">API</dt>
-          <dd className="truncate font-mono text-[12px]" title={item.baseUrl}>
-            {item.baseUrl ?? "—"}
-          </dd>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <dt className="inline-flex items-center gap-1 text-muted-foreground">
-            <Server className="size-3.5" /> Python service
-          </dt>
-          <dd className="truncate font-mono text-[12px]" title={item.pythonService ?? undefined}>
-            {item.pythonService ? item.pythonService : <span className="font-sans text-muted-foreground">not configured</span>}
-          </dd>
-        </div>
-      </dl>
-    </IntegrationCardShell>
   );
 }

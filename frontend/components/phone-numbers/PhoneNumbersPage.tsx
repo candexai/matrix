@@ -5,6 +5,7 @@ import type { PhoneNumber } from "@/lib/types";
 import { useAgents, useDeletePhoneNumber, usePhoneNumbers } from "@/hooks/api";
 import { errorMessage } from "@/lib/api";
 import { ConfirmDialog } from "@/components/agents/ConfirmDialog";
+import { ElevenLabsRequired, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
@@ -101,16 +102,20 @@ export function PhoneNumbersPage() {
         {numbers.isPending ? (
           <TableSkeleton />
         ) : numbers.isError ? (
-          <EmptyState
-            icon={TriangleAlert}
-            title="Couldn't reach ElevenLabs"
-            description={errorMessage(numbers.error)}
-            action={
-              <Button variant="outline" onClick={() => numbers.refetch()} loading={numbers.isFetching}>
-                {!numbers.isFetching ? <RefreshCw /> : null} Retry
-              </Button>
-            }
-          />
+          isElevenNotConfigured(numbers.error) ? (
+            <ElevenLabsRequired description="Phone numbers live in your ElevenLabs account. Connect it in Integrations to import Twilio numbers or SIP trunks here." />
+          ) : (
+            <EmptyState
+              icon={TriangleAlert}
+              title="Couldn't reach ElevenLabs"
+              description={errorMessage(numbers.error)}
+              action={
+                <Button variant="outline" onClick={() => numbers.refetch()} loading={numbers.isFetching}>
+                  {!numbers.isFetching ? <RefreshCw /> : null} Retry
+                </Button>
+              }
+            />
+          )
         ) : total === 0 ? (
           <EmptyState icon={Phone} title="No phone numbers yet" description="Import a number you already own in Twilio, or connect a SIP trunk from your carrier or PBX. Agents need an outbound-capable number to place calls." action={<div className="flex flex-wrap justify-center gap-2">{importButtons}</div>} />
         ) : (

@@ -1,5 +1,5 @@
 "use client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api, API_URL, errorMessage } from "@/lib/api";
 import type {
@@ -18,6 +18,7 @@ import type {
   Catalog,
   Conversation,
   ConversationListResponse,
+  ElevenLabsStatus,
   InsightTag,
   InsightsDashboard,
   IntegrationsResponse,
@@ -598,6 +599,40 @@ export function useZohoDisconnect() {
       qc.invalidateQueries({ queryKey: ["lead-lists"] });
       qc.invalidateQueries({ queryKey: ["lead-binding"] });
       toast.success(r.purged ? `Zoho disconnected · removed ${r.purged.leads} leads and ${r.purged.lists} tables` : "Zoho disconnected");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
+// ---------- integrations / elevenlabs (per-workspace API key) ----------
+/** Everything read through the workspace's ElevenLabs key — refetched whenever the key changes. */
+const ELEVEN_DEPENDENT_KEYS = ["agents", "phone-numbers", "voices", "usage", "tools", "knowledge-base", "conversations"] as const;
+function invalidateElevenDependents(qc: QueryClient) {
+  for (const key of ELEVEN_DEPENDENT_KEYS) qc.invalidateQueries({ queryKey: [key] });
+}
+export const useElevenStatus = () => useQuery({ queryKey: ["elevenlabs", "status"], queryFn: () => api.get<ElevenLabsStatus>("/integrations/elevenlabs/status") });
+export function useConnectEleven() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { apiKey: string; region?: "us" | "eu" }) => api.put<ElevenLabsStatus>("/integrations/elevenlabs", input),
+    onSuccess: (s) => {
+      qc.setQueryData(["elevenlabs", "status"], s);
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      invalidateElevenDependents(qc);
+      toast.success("ElevenLabs connected");
+    },
+    // Errors (e.g. ELEVENLABS_INVALID_KEY) are shown inline by ElevenLabsConnectDialog — no toast here.
+  });
+}
+export function useDisconnectEleven() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.delete<ElevenLabsStatus>("/integrations/elevenlabs"),
+    onSuccess: (s) => {
+      qc.setQueryData(["elevenlabs", "status"], s);
+      qc.invalidateQueries({ queryKey: ["integrations"] });
+      invalidateElevenDependents(qc);
+      toast.success(s.source === "env" ? "Your key was removed — using the server key again" : "ElevenLabs disconnected");
     },
     onError: (e) => toast.error(errorMessage(e)),
   });

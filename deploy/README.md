@@ -44,7 +44,9 @@ bash /opt/matrix/deploy/deploy.sh        # git pull → npm ci → build backend
 
 ## Configuration
 
-- Backend env: `/opt/matrix/backend/.env` (Mongo, ElevenLabs, Zoho, OpenAI, `PUBLIC_BACKEND_URL=https://edu.candexai.co.in`). After editing: `pm2 restart matrix-backend`.
+- Backend env: `/opt/matrix/backend/.env` (Mongo, Zoho, OpenAI, `PUBLIC_BACKEND_URL=https://edu.candexai.co.in`). After editing: `pm2 restart matrix-backend`.
+- ElevenLabs is configured **per workspace** from the UI (Integrations → ElevenLabs; keys are stored encrypted with `ENCRYPTION_KEY`). `ELEVENLABS_API_KEY` / `ELEVENLABS_BASE_URL` in `.env` are optional and only serve the legacy bootstrap workspace `default`.
+- Accounts: every sign-up gets its own fresh workspace. To hand the legacy `default` workspace (pre-accounts data) to someone, either set `BOOTSTRAP_OWNER_EMAIL=<their email>` before they sign up, or move an existing user: `cd /opt/matrix/backend && npm run auth:assign-workspace -- --email <email> --workspace default` (or `new` / any id); they must sign in again afterwards.
 - Frontend env: `/opt/matrix/frontend/.env.production` (`NEXT_PUBLIC_API_URL`). It is baked in at build time — after editing run `deploy.sh` again.
 - Basic-auth users (only if you re-add the `auth_basic` gate): `htpasswd /etc/nginx/matrix.htpasswd <user>` (add/change), `htpasswd -D /etc/nginx/matrix.htpasswd <user>` (remove), then `systemctl reload nginx`.
 

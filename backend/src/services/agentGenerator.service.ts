@@ -12,7 +12,7 @@ import { defaultOpenAICaller, OpenAICaller, openAiConfigured } from "./extractio
 import { getIntegration, fetchLeadFields } from "./zoho/zohoClient";
 import { getLeadList, setBinding } from "./leads.service";
 import { createAgent } from "./agent.service";
-import { elevenlabs } from "./elevenlabs/client";
+import { getElevenClient } from "./elevenlabs/registry";
 import { HttpError } from "../utils/http";
 import { LANGUAGES } from "../constants/catalog";
 
@@ -192,9 +192,10 @@ export async function generateDraft(workspaceId: string, listId: string, input: 
 }
 
 /** Pick a default voice for the language: prefers premade voices whose verified languages include it. */
-async function pickVoice(language: string, preferred?: string): Promise<string> {
+async function pickVoice(workspaceId: string, language: string, preferred?: string): Promise<string> {
   if (preferred) return preferred;
-  const voices = await elevenlabs.listVoices();
+  const eleven = await getElevenClient(workspaceId);
+  const voices = await eleven.listVoices();
   const lang = language.toLowerCase().split("-")[0];
   const match = voices.find((v) => (v.verified_languages ?? []).some((l) => l.language?.toLowerCase().startsWith(lang)) && v.category === "premade") ?? voices.find((v) => v.category === "premade") ?? voices[0];
   if (!match) throw new HttpError(400, "No voices available in your ElevenLabs workspace", "NO_VOICE");
@@ -203,7 +204,7 @@ async function pickVoice(language: string, preferred?: string): Promise<string> 
 
 export async function createAgentFromDraft(workspaceId: string, listId: string, draft: AgentDraft, opts: { voiceId?: string; phoneNumberId?: string; llm?: string; ttsModelId?: string }): Promise<{ agent: AgentDoc; binding: unknown }> {
   if (!draft.system_prompt?.trim()) throw new HttpError(400, "System prompt is empty", "VALIDATION_ERROR");
-  const voice_id = await pickVoice(draft.language, opts.voiceId);
+  const voice_id = await pickVoice(workspaceId, draft.language, opts.voiceId);
   const agent = await createAgent(workspaceId, {
     name: draft.name,
     description: draft.description || `Generated for lead table "${listId}"`,
@@ -228,6 +229,6 @@ export async function createAgentFromDraft(workspaceId: string, listId: string, 
     pushToZoho: true,
     updateLeadStatusTo: draft.updateLeadStatusTo,
   });
-  const fresh = (await Agent.findById(agent._id)) ?? agent;
+  const fresh = (await Agent.findOne({ workspaceId, _id: agent._id })) ?? agent;
   return { agent: fresh, binding };
 }

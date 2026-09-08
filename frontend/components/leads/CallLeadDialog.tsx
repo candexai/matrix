@@ -36,7 +36,7 @@ export function CallLeadDialog({ lead, open, onOpenChange, binding, listId, list
           <DialogDescription>{to ? `The agent will dial ${to} and collect the configured fields.` : "This lead has no phone number on file."}</DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
-          <AgentPicker agents={agents.data} loading={agents.isLoading} value={agentId} onChange={setAgentId} boundAgentId={binding?.agentId} boundLabel={boundLabel} />
+          <AgentPicker agents={agents.data} loading={agents.isLoading} error={agents.error} value={agentId} onChange={setAgentId} boundAgentId={binding?.agentId} boundLabel={boundLabel} />
           <PhonePicker numbers={phones.data} loading={phones.isLoading} error={phones.error} value={phoneNumberId} onChange={setPhoneNumberId} />
         </DialogBody>
         <DialogFooter>

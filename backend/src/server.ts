@@ -1,7 +1,7 @@
 import { env, postCallWebhookUrl } from "./config/env";
 import { connectDatabase } from "./config/db";
 import { createApp } from "./app";
-import { elevenlabs } from "./services/elevenlabs/client";
+import { envElevenConfigured, isElevenNotConfigured } from "./services/elevenlabs/registry";
 import { pythonService } from "./services/elevenlabs/pythonService";
 import { getZohoApp } from "./services/zoho/zohoClient";
 import { ensureWebhooksForAllAgents } from "./services/agent.service";
@@ -14,8 +14,8 @@ async function main() {
   app.listen(env.PORT, async () => {
     console.log(`\n  Matrix x CandexAI backend  →  http://localhost:${env.PORT}`);
     console.log(`  Database     : ${db.mode === "atlas" ? "✓ MongoDB Atlas" : "⚠ local fallback (Atlas unreachable) – data in ~/.matrix/mongo-data"}`);
-    console.log(`  ElevenLabs   : ${elevenlabs.configured ? "✓ " + env.ELEVENLABS_BASE_URL : "✗ ELEVENLABS_API_KEY missing"}`);
-    console.log(`  Python svc   : ${pythonService.configured ? env.ELEVENLABS_SERVICE_URL + " (fallback to direct API when down)" : "not configured"}`);
+    console.log(`  ElevenLabs   : per-workspace keys (Integrations → ElevenLabs); env key for legacy "${env.DEFAULT_WORKSPACE_ID}" workspace: ${envElevenConfigured() ? "✓ " + env.ELEVENLABS_BASE_URL : "✗ not set"}`);
+    console.log(`  Python svc   : ${pythonService.configured ? env.ELEVENLABS_SERVICE_URL + " (env-key workspace only; direct API otherwise)" : "not configured"}`);
     const zohoApp = await getZohoApp(env.DEFAULT_WORKSPACE_ID).catch(() => null);
     console.log(`  Zoho CRM     : ${zohoApp ? `✓ configured (${zohoApp.source === "db" ? "app settings in UI" : "env"}, client ${zohoApp.clientId.slice(0, 9)}…)` : "✗ add the Zoho client in Integrations → Zoho CRM → App settings"}`);
     if (zohoApp && !zohoApp.redirectUri.startsWith(env.PUBLIC_BACKEND_URL)) {
@@ -45,8 +45,13 @@ async function main() {
           const { Agent } = await import("./models/Agent");
           const ids = (await Agent.distinct("workspaceId")).map(String);
           for (const ws of ids.length ? ids : [env.DEFAULT_WORKSPACE_ID]) {
-            const r = await syncConversations(ws, { sinceHours: 6, max: 50 });
-            if (r.upserted) console.log(`[reconcile] ${ws}: pulled ${r.upserted} conversation(s) from ElevenLabs`);
+            try {
+              const r = await syncConversations(ws, { sinceHours: 6, max: 50 });
+              if (r.upserted) console.log(`[reconcile] ${ws}: pulled ${r.upserted} conversation(s) from ElevenLabs`);
+            } catch (err) {
+              if (isElevenNotConfigured(err)) continue; // workspace has not connected ElevenLabs yet
+              console.warn(`[reconcile] ${ws} failed:`, (err as Error).message);
+            }
           }
         } catch (err) {
           console.warn("[reconcile] failed:", (err as Error).message);

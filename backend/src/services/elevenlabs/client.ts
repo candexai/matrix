@@ -1,10 +1,36 @@
 /**
  * Direct ElevenLabs REST client (Conversational AI + voices + workspace webhooks).
- * Base URL honours EU data residency via ELEVENLABS_BASE_URL.
+ *
+ * One instance per set of credentials. Instances are created by services/elevenlabs/registry.ts
+ * (`getElevenClient(workspaceId)`) from the key each workspace stored in Integrations → ElevenLabs;
+ * only the legacy "default" workspace may fall back to ELEVENLABS_API_KEY / ELEVENLABS_BASE_URL.
+ * There is intentionally no module-level singleton so no code path can leak one account's data
+ * into another workspace.
  */
 import axios, { AxiosInstance } from "axios";
-import { env } from "../../config/env";
 import { HttpError } from "../../utils/http";
+
+export type ElevenCredentialSource = "workspace" | "env";
+
+export interface ElevenClientOptions {
+  apiKey: string;
+  baseUrl: string;
+  source: ElevenCredentialSource;
+}
+
+export interface ElevenSubscription {
+  tier?: string;
+  character_count?: number;
+  character_limit?: number;
+  next_character_count_reset_unix?: number;
+  status?: string;
+}
+
+export interface ElevenUser {
+  first_name?: string;
+  subscription?: ElevenSubscription;
+  [k: string]: unknown;
+}
 
 export interface ElevenVoice {
   voice_id: string;
@@ -100,23 +126,35 @@ export interface ElevenKnowledgeDoc {
   dependent_agents?: unknown[];
 }
 
-class ElevenLabsClient {
+export class ElevenLabsClient {
   private http: AxiosInstance;
+  private readonly apiKey: string;
+  /** Where the credentials came from: the workspace's stored key, or the legacy env key. */
+  readonly source: ElevenCredentialSource;
+  readonly baseUrl: string;
 
-  constructor() {
+  constructor(opts: ElevenClientOptions) {
+    this.apiKey = opts.apiKey;
+    this.source = opts.source;
+    this.baseUrl = opts.baseUrl.replace(/\/$/, "");
     this.http = axios.create({
-      baseURL: env.ELEVENLABS_BASE_URL,
+      baseURL: this.baseUrl,
       timeout: 45000,
-      headers: { "xi-api-key": env.ELEVENLABS_API_KEY, "Content-Type": "application/json" },
+      headers: { "xi-api-key": this.apiKey, "Content-Type": "application/json" },
     });
   }
 
   get configured(): boolean {
-    return Boolean(env.ELEVENLABS_API_KEY);
+    return Boolean(this.apiKey);
+  }
+
+  /** True when this client uses the same key as another (used to decide whether stored webhooks stay valid). */
+  usesKey(apiKey: string): boolean {
+    return this.apiKey === apiKey;
   }
 
   private assertConfigured() {
-    if (!this.configured) throw new HttpError(500, "ELEVENLABS_API_KEY is not configured", "ELEVENLABS_NOT_CONFIGURED");
+    if (!this.configured) throw new HttpError(409, "Connect your ElevenLabs account in Integrations → ElevenLabs", "ELEVENLABS_NOT_CONFIGURED");
   }
 
   // ---------- Agents ----------
@@ -174,10 +212,17 @@ class ElevenLabsClient {
     return data ?? [];
   }
 
-  async getSubscription(): Promise<{ tier?: string; character_count?: number; character_limit?: number; next_character_count_reset_unix?: number; status?: string }> {
+  async getSubscription(opts: { timeoutMs?: number } = {}): Promise<ElevenSubscription> {
     this.assertConfigured();
-    const { data } = await this.http.get("/v1/user/subscription");
+    const { data } = await this.http.get("/v1/user/subscription", { timeout: opts.timeoutMs });
     return data;
+  }
+
+  /** Account probe (`GET /v1/user`): validates the key and returns the account holder's name + subscription. */
+  async getUser(opts: { timeoutMs?: number } = {}): Promise<ElevenUser> {
+    this.assertConfigured();
+    const { data } = await this.http.get("/v1/user", { timeout: opts.timeoutMs });
+    return data ?? {};
   }
 
   // ---------- Telephony ----------
@@ -343,5 +388,3 @@ class ElevenLabsClient {
     return data;
   }
 }
-
-export const elevenlabs = new ElevenLabsClient();

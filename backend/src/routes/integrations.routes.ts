@@ -14,14 +14,14 @@ import { syncZohoLeads } from "../services/zoho/zohoSync";
 import { syncConversations } from "../services/conversations.service";
 import { reprocessPendingExtractions } from "../services/postCall.service";
 import { analyzePending } from "../services/insights.service";
-import { elevenlabs } from "../services/elevenlabs/client";
+import { elevenStatus, connectEleven, disconnectEleven } from "../services/elevenlabs/registry";
 import { pythonService } from "../services/elevenlabs/pythonService";
 
 const router = Router();
 
 /** Catalog of integrations shown on the Integrations page. Only Zoho + ElevenLabs are live in this phase. */
 router.get("/", asyncHandler(async (req, res) => {
-  const [integ, leadCount, zohoOk] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" }), zoho.zohoConfigured(req.workspaceId)]);
+  const [integ, leadCount, zohoOk, eleven] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" }), zoho.zohoConfigured(req.workspaceId), elevenStatus(req.workspaceId, { probe: false })]);
   ok(res, {
     crm: [
       {
@@ -45,7 +45,22 @@ router.get("/", asyncHandler(async (req, res) => {
       { id: "pipedrive", name: "Pipedrive", category: "crm", available: false },
     ],
     voice: [
-      { id: "elevenlabs", name: "ElevenLabs", category: "voice", available: true, connected: elevenlabs.configured, baseUrl: env.ELEVENLABS_BASE_URL, pythonService: pythonService.configured ? env.ELEVENLABS_SERVICE_URL : null },
+      {
+        id: "elevenlabs",
+        name: "ElevenLabs",
+        category: "voice",
+        available: true,
+        configured: eleven.configured,
+        connected: eleven.configured,
+        source: eleven.source,
+        keyHint: eleven.keyHint,
+        region: eleven.region,
+        baseUrl: eleven.baseUrl,
+        connectedAt: eleven.connectedAt,
+        account: eleven.account,
+        // the FastAPI wrapper carries its own copy of the env key → only meaningful for the env-backed workspace
+        pythonService: pythonService.configured && eleven.source === "env" ? env.ELEVENLABS_SERVICE_URL : null,
+      },
       { id: "twilio", name: "Twilio", category: "voice", available: false, note: "Import numbers in ElevenLabs" },
     ],
     channels: [
@@ -63,6 +78,14 @@ router.get("/", asyncHandler(async (req, res) => {
     ],
   });
 }));
+
+// ---------- ElevenLabs (per-workspace API key) ----------
+router.get("/elevenlabs/status", asyncHandler(async (req, res) => ok(res, await elevenStatus(req.workspaceId))));
+router.put("/elevenlabs", asyncHandler(async (req, res) => {
+  const body = z.object({ apiKey: z.string().min(10), region: z.enum(["us", "eu"]).optional() }).parse(req.body);
+  ok(res, await connectEleven(req.workspaceId, body));
+}));
+router.delete("/elevenlabs", asyncHandler(async (req, res) => ok(res, await disconnectEleven(req.workspaceId))));
 
 // ---------- Zoho ----------
 router.post("/zoho/connect", asyncHandler(async (req, res) => ok(res, { authUrl: await zoho.buildAuthUrl(req.workspaceId) })));

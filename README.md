@@ -33,8 +33,9 @@ npm run dev                    # runs both servers (or npm run dev:backend / dev
 | Variable | Notes |
 |----------|-------|
 | `MONGODB_URI`, `DB_NAME` | Atlas connection. Add this machine's public IP to **Atlas → Network Access**. In development the backend falls back to an in-memory MongoDB when Atlas is unreachable (data is not persisted). |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_BASE_URL` | Direct ElevenLabs API. Use `https://api.eu.residency.elevenlabs.io` for EU-residency keys. |
-| `ELEVENLABS_SERVICE_URL` | Optional. Your Python FastAPI ElevenLabs wrapper (`Desktop/elvenlabs_agent`, `venv/bin/python run_api.py`, port 8000). When reachable, agent create/update go through it; otherwise the backend talks to ElevenLabs directly. |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_BASE_URL` | **Optional, legacy.** Each workspace connects its own ElevenLabs key from the UI (see *Accounts & workspaces*). The env key only serves the bootstrap workspace `default`. Use `https://api.eu.residency.elevenlabs.io` for EU-residency keys. |
+| `ELEVENLABS_SERVICE_URL` | Optional. Your Python FastAPI ElevenLabs wrapper (`Desktop/elvenlabs_agent`, `venv/bin/python run_api.py`, port 8000). It holds its own copy of the env key, so it is only used for the env-backed `default` workspace; every other workspace talks to ElevenLabs directly. |
+| `BOOTSTRAP_OWNER_EMAIL` | Optional. The sign-up email that should own the legacy `default` workspace (see *Accounts & workspaces*). |
 | `PUBLIC_BACKEND_URL` | Public **https** URL of the backend. Optional: if it is not https, the backend auto-detects a running `ngrok http 5001` tunnel (via ngrok's local API on port 4040), registers the post-call webhook and attaches it to every agent within a minute. |
 | `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_ACCOUNTS_URL` | Create a *Server-based application* at https://api-console.zoho.com with redirect URI `${PUBLIC_BACKEND_URL}/api/v1/integrations/zoho/callback`. Use the accounts host of your data centre (`accounts.zoho.in`, `accounts.zoho.com`, `accounts.zoho.eu`…). |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | Post-call transcript extraction (fills empty lead fields). Optional; without it only ElevenLabs data-collection results are used. |
@@ -96,4 +97,15 @@ Live at **https://edu.candexai.co.in** on `root@37.60.249.35` (Ubuntu 24.04): ng
 
 ## Accounts & workspaces
 
-Email/password accounts (`POST /api/v1/auth/signup|login|logout`, `GET /api/v1/auth/me`, `POST /api/v1/auth/change-password`); sessions are 30-day JWTs in an httpOnly cookie signed with `JWT_SECRET`. Every document carries a `workspaceId`; a session fixes the workspace, so all API routes except auth, the ElevenLabs webhook, the Zoho OAuth callback and `/health` require a signed-in user. The **first account ever created owns the bootstrap workspace (`default`)**, i.e. everything created before accounts existed; later sign-ups get a fresh, empty workspace. Pages `/login` and `/signup`; the dashboard redirects to `/login` when signed out.
+Email/password accounts (`POST /api/v1/auth/signup|login|logout`, `GET /api/v1/auth/me`, `POST /api/v1/auth/change-password`); sessions are 30-day JWTs in an httpOnly cookie signed with `JWT_SECRET`. Every document carries a `workspaceId`; a session fixes the workspace, so all API routes except auth, the ElevenLabs webhook, the Zoho OAuth callback and `/health` require a signed-in user. **Every sign-up gets a fresh, empty workspace** (random id). The legacy bootstrap workspace `default` (everything created before accounts existed) is owned by nobody until either the address in `BOOTSTRAP_OWNER_EMAIL` signs up (it then takes `default`, provided no user owns it yet) or an admin assigns it:
+
+```bash
+cd backend && npm run build
+npm run auth:assign-workspace -- --email someone@example.com --workspace default   # or any id, or "new" for a fresh one
+```
+
+The script moves the user (creating the workspace settings when missing) and prints the result; the user must sign in again because sessions carry the workspace id. Pages `/login` and `/signup`; the dashboard redirects to `/login` when signed out.
+
+### ElevenLabs per workspace
+
+Every workspace connects **its own** ElevenLabs API key on `/integrations` (`GET /api/v1/integrations/elevenlabs/status`, `PUT /api/v1/integrations/elevenlabs` with `{ apiKey, region?: "us" | "eu" }`, `DELETE /api/v1/integrations/elevenlabs`). The key is validated against ElevenLabs (`400 ELEVENLABS_INVALID_KEY` otherwise), stored encrypted with `ENCRYPTION_KEY`, and used for everything that workspace does with ElevenLabs: agents, phone numbers, voices, HTTP tools, knowledge base, conversations, usage. Until a key is connected those endpoints answer `409 ELEVENLABS_NOT_CONFIGURED`. The only exception is the legacy `default` workspace, which falls back to `ELEVENLABS_API_KEY` / `ELEVENLABS_BASE_URL` from env when it has no stored key (status shows `source: "env"`). The post-call webhook is registered per workspace (`Matrix post-call (<workspaceId>)`), so two workspaces may even share one ElevenLabs account; conversations are only stored under the workspace that owns the agent.

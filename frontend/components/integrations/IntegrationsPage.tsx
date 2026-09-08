@@ -12,7 +12,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ComingSoonCard, ElevenLabsCard } from "./IntegrationCard";
+import { ComingSoonCard } from "./IntegrationCard";
+import { ElevenLabsCard } from "./ElevenLabsCard";
 import { ZohoCard } from "./ZohoCard";
 import { CATEGORY_LABELS, CATEGORY_ORDER, type Category } from "./integrationCopy";
 

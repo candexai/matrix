@@ -172,7 +172,7 @@ export function AttachAgentDialog({ open, onOpenChange, listId, listName, zohoCo
 
           <section>
             <StepHeading n={1} title="Agent" />
-            {bindingQ.isLoading ? <Skeleton className="h-9 w-full" /> : <AgentPicker agents={agents.data} loading={agents.isLoading} value={agentId} onChange={setAgentId} boundAgentId={binding?.agentId} boundLabel={boundLabel} />}
+            {bindingQ.isLoading ? <Skeleton className="h-9 w-full" /> : <AgentPicker agents={agents.data} loading={agents.isLoading} error={agents.error} value={agentId} onChange={setAgentId} boundAgentId={binding?.agentId} boundLabel={boundLabel} />}
           </section>
 
           <section>

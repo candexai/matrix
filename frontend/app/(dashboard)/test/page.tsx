@@ -7,6 +7,7 @@ import { useAgents, useCatalog, useVoices } from "@/hooks/api";
 import { errorMessage } from "@/lib/api";
 import { optionLabel, voiceName } from "@/components/agents/agent-utils";
 import { KeyValueEditor } from "@/components/agents/form/primitives";
+import { ElevenLabsRequired, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { CallPanel } from "@/components/test/CallPanel";
 import { PhoneCallPanel } from "@/components/test/PhoneCallPanel";
 import { useTestCall } from "@/components/test/useTestCall";
@@ -120,16 +121,20 @@ function TestPageInner() {
             <Skeleton className="h-[520px] rounded-xl" />
           </div>
         ) : agents.isError ? (
-          <EmptyState
-            icon={TriangleAlert}
-            title="Couldn't load agents"
-            description={errorMessage(agents.error)}
-            action={
-              <Button variant="outline" onClick={() => agents.refetch()}>
-                Retry
-              </Button>
-            }
-          />
+          isElevenNotConfigured(agents.error) ? (
+            <ElevenLabsRequired description="Test calls ring through your own ElevenLabs account. Connect it in Integrations, create an agent, then come back here to talk to it." />
+          ) : (
+            <EmptyState
+              icon={TriangleAlert}
+              title="Couldn't load agents"
+              description={errorMessage(agents.error)}
+              action={
+                <Button variant="outline" onClick={() => agents.refetch()}>
+                  Retry
+                </Button>
+              }
+            />
+          )
         ) : !agents.data?.length ? (
           <EmptyState
             icon={AudioWaveform}

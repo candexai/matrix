@@ -50,9 +50,15 @@ export function publicUser(u: UserDoc) {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/** Fresh random workspace id (16 hex chars). */
+export function newWorkspaceId(): string {
+  return crypto.randomBytes(8).toString("hex");
+}
+
 /**
- * Sign-up. The very first account takes ownership of the bootstrap workspace ("default") so data
- * created before auth existed stays visible; every later account gets its own empty workspace.
+ * Sign-up. Every account gets its own fresh, empty workspace. The only exception is the optional
+ * BOOTSTRAP_OWNER_EMAIL: when that address signs up while nobody owns the legacy bootstrap
+ * workspace ("default" — data created before accounts existed) it takes ownership of it.
  */
 export async function signup(input: { email: string; password: string; name: string; company?: string }): Promise<UserDoc> {
   const email = input.email.trim().toLowerCase();
@@ -61,8 +67,8 @@ export async function signup(input: { email: string; password: string; name: str
   if (!input.name?.trim()) throw new HttpError(400, "Name is required", "VALIDATION_ERROR");
   if (await User.exists({ email })) throw new HttpError(409, "An account with this email already exists — sign in instead", "EMAIL_TAKEN");
 
-  const first = (await User.countDocuments()) === 0;
-  const workspaceId = first ? env.DEFAULT_WORKSPACE_ID : crypto.randomBytes(8).toString("hex");
+  const bootstrap = Boolean(env.BOOTSTRAP_OWNER_EMAIL) && email === env.BOOTSTRAP_OWNER_EMAIL && !(await User.exists({ workspaceId: env.DEFAULT_WORKSPACE_ID }));
+  const workspaceId = bootstrap ? env.DEFAULT_WORKSPACE_ID : newWorkspaceId();
   const user = await User.create({ email, passwordHash: await bcrypt.hash(input.password, 11), name: input.name.trim(), workspaceId, role: "owner", lastLoginAt: new Date() });
   const settings = (await WorkspaceSettings.findOne({ workspaceId })) ?? (await WorkspaceSettings.create({ workspaceId }));
   if (input.company?.trim() || settings.name === "Matrix") {

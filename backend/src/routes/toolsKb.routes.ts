@@ -5,7 +5,7 @@ import { Router } from "express";
 import { z } from "zod";
 import multer from "multer";
 import { asyncHandler, ok, HttpError } from "../utils/http";
-import { elevenlabs } from "../services/elevenlabs/client";
+import { getElevenClient } from "../services/elevenlabs/registry";
 
 export const toolsRouter = Router();
 export const knowledgeRouter = Router();
@@ -87,40 +87,53 @@ export function summarizeTool(t: { id: string; tool_config: Record<string, any>;
   };
 }
 
-toolsRouter.get("/", asyncHandler(async (_req, res) => ok(res, (await elevenlabs.listTools()).map((t) => summarizeTool(t as any)))));
+toolsRouter.get("/", asyncHandler(async (req, res) => {
+  const eleven = await getElevenClient(req.workspaceId);
+  ok(res, (await eleven.listTools()).map((t) => summarizeTool(t as any)));
+}));
 toolsRouter.post("/", asyncHandler(async (req, res) => {
   const body = toolBody.parse(req.body);
-  const created = await elevenlabs.createTool(buildWebhookToolConfig(body));
+  const eleven = await getElevenClient(req.workspaceId);
+  const created = await eleven.createTool(buildWebhookToolConfig(body));
   ok(res, summarizeTool(created as any), 201);
 }));
 toolsRouter.patch("/:id", asyncHandler(async (req, res) => {
   const body = toolBody.parse(req.body);
-  const updated = await elevenlabs.updateTool(req.params.id, buildWebhookToolConfig(body));
+  const eleven = await getElevenClient(req.workspaceId);
+  const updated = await eleven.updateTool(req.params.id, buildWebhookToolConfig(body));
   ok(res, summarizeTool(updated as any));
 }));
 toolsRouter.delete("/:id", asyncHandler(async (req, res) => {
-  await elevenlabs.deleteTool(req.params.id);
+  const eleven = await getElevenClient(req.workspaceId);
+  await eleven.deleteTool(req.params.id);
   ok(res, { deleted: true });
 }));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
-knowledgeRouter.get("/", asyncHandler(async (_req, res) => ok(res, (await elevenlabs.listKnowledgeBase()).filter((d) => d.type !== "folder").map((d) => ({ id: d.id, name: d.name, type: d.type, url: d.url, createdAt: d.metadata?.created_at_unix_secs ? new Date(d.metadata.created_at_unix_secs * 1000) : null, sizeBytes: d.metadata?.size_bytes ?? null, dependentAgents: Array.isArray(d.dependent_agents) ? d.dependent_agents.length : undefined })))));
+knowledgeRouter.get("/", asyncHandler(async (req, res) => {
+  const eleven = await getElevenClient(req.workspaceId);
+  ok(res, (await eleven.listKnowledgeBase()).filter((d) => d.type !== "folder").map((d) => ({ id: d.id, name: d.name, type: d.type, url: d.url, createdAt: d.metadata?.created_at_unix_secs ? new Date(d.metadata.created_at_unix_secs * 1000) : null, sizeBytes: d.metadata?.size_bytes ?? null, dependentAgents: Array.isArray(d.dependent_agents) ? d.dependent_agents.length : undefined })));
+}));
 knowledgeRouter.post("/url", asyncHandler(async (req, res) => {
   const { url, name } = z.object({ url: z.string().url(), name: z.string().max(120).optional() }).parse(req.body);
-  ok(res, await elevenlabs.createKnowledgeUrl(url, name), 201);
+  const eleven = await getElevenClient(req.workspaceId);
+  ok(res, await eleven.createKnowledgeUrl(url, name), 201);
 }));
 knowledgeRouter.post("/text", asyncHandler(async (req, res) => {
   const { text, name } = z.object({ text: z.string().min(1).max(500_000), name: z.string().max(120).optional() }).parse(req.body);
-  ok(res, await elevenlabs.createKnowledgeText(text, name), 201);
+  const eleven = await getElevenClient(req.workspaceId);
+  ok(res, await eleven.createKnowledgeText(text, name), 201);
 }));
 knowledgeRouter.post("/file", upload.single("file"), asyncHandler(async (req, res) => {
   const f = (req as unknown as { file?: Express.Multer.File }).file;
   if (!f) throw new HttpError(400, "Attach a file (pdf, docx, txt, html, epub)", "VALIDATION_ERROR");
   const name = typeof req.body?.name === "string" && req.body.name.trim() ? req.body.name.trim() : undefined;
-  ok(res, await elevenlabs.createKnowledgeFile({ buffer: f.buffer, filename: f.originalname, mimetype: f.mimetype }, name), 201);
+  const eleven = await getElevenClient(req.workspaceId);
+  ok(res, await eleven.createKnowledgeFile({ buffer: f.buffer, filename: f.originalname, mimetype: f.mimetype }, name), 201);
 }));
 knowledgeRouter.delete("/:id", asyncHandler(async (req, res) => {
-  await elevenlabs.deleteKnowledgeDoc(req.params.id);
+  const eleven = await getElevenClient(req.workspaceId);
+  await eleven.deleteKnowledgeDoc(req.params.id);
   ok(res, { deleted: true });
 }));

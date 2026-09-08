@@ -35,8 +35,13 @@ export const env = {
 
   ENCRYPTION_KEY: opt("ENCRYPTION_KEY", "matrix-dev-encryption-key-change-me-32chars"),
 
-  /** Single-tenant for now; every document carries this so multi-tenancy can be added later. */
+  /**
+   * Legacy bootstrap workspace: data created before accounts existed lives here, and it is the only
+   * workspace that may use ELEVENLABS_API_KEY from env. Every other workspace stores its own key.
+   */
   DEFAULT_WORKSPACE_ID: "default",
+  /** Optional: the sign-up email that takes ownership of the "default" workspace (while nobody owns it yet). */
+  BOOTSTRAP_OWNER_EMAIL: opt("BOOTSTRAP_OWNER_EMAIL").trim().toLowerCase(),
 };
 
 export const postCallWebhookUrl = () => `${env.PUBLIC_BACKEND_URL}/api/v1/webhooks/elevenlabs/post-call`;

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { asyncHandler, ok } from "../utils/http";
 import * as catalog from "../constants/catalog";
-import { elevenlabs } from "../services/elevenlabs/client";
+import { findElevenClient, getElevenClient } from "../services/elevenlabs/registry";
 import { DEFAULT_AGENT_CONFIG } from "../services/elevenlabs/configBuilder";
 
 const router = Router();
@@ -24,11 +24,15 @@ router.get("/catalog", (_req, res) =>
   })
 );
 
-let voiceCache: { at: number; list: unknown[] } | null = null;
+// Voices come from each workspace's own ElevenLabs account → cache per workspace.
+const voiceCache = new Map<string, { at: number; list: unknown[] }>();
 router.get("/voices", asyncHandler(async (req, res) => {
-  if (!voiceCache || Date.now() - voiceCache.at > 10 * 60_000 || req.query.refresh === "1") {
-    const voices = await elevenlabs.listVoices();
-    voiceCache = {
+  const ws = req.workspaceId;
+  let cached = voiceCache.get(ws);
+  if (!cached || Date.now() - cached.at > 10 * 60_000 || req.query.refresh === "1") {
+    const eleven = await getElevenClient(ws);
+    const voices = await eleven.listVoices();
+    cached = {
       at: Date.now(),
       list: voices.map((v) => ({
         voice_id: v.voice_id,
@@ -40,17 +44,21 @@ router.get("/voices", asyncHandler(async (req, res) => {
         languages: (v.verified_languages ?? []).map((l) => l.language),
       })),
     };
+    voiceCache.set(ws, cached);
   }
-  ok(res, voiceCache.list);
+  ok(res, cached.list);
 }));
 
-router.get("/usage", asyncHandler(async (_req, res) => {
-  if (!elevenlabs.configured) return ok(res, { configured: false });
-  const s = await elevenlabs.getSubscription();
+/** Character usage of the workspace's ElevenLabs account (header pill). `configured: false` until a key is connected. */
+router.get("/usage", asyncHandler(async (req, res) => {
+  const eleven = await findElevenClient(req.workspaceId);
+  if (!eleven) return ok(res, { configured: false });
+  const s = await eleven.getSubscription();
   const used = s.character_count ?? 0;
   const limit = s.character_limit ?? 0;
   ok(res, {
     configured: true,
+    source: eleven.source,
     tier: s.tier,
     status: s.status,
     charactersUsed: used,

@@ -6,6 +6,7 @@ import { useVoices } from "@/hooks/api";
 import { errorMessage } from "@/lib/api";
 import type { Voice } from "@/lib/types";
 import { cn, titleCase } from "@/lib/utils";
+import { ElevenLabsRequiredNotice, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -229,19 +230,25 @@ function VoicePicker({ value, onChange, error, language, languageLabel }: { valu
             ))}
           </div>
         ) : voices.isError ? (
-          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-            <TriangleAlert className="size-5 text-warning" />
-            <p className="text-sm">Couldn't load voices from ElevenLabs.</p>
-            <p className="text-xs text-muted-foreground">{errorMessage(voices.error)}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => voices.refetch()}>
-                <RefreshCw /> Retry
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setManual(true)}>
-                Enter a voice ID instead
-              </Button>
+          isElevenNotConfigured(voices.error) ? (
+            <div className="px-4 py-5">
+              <ElevenLabsRequiredNotice>in Integrations to browse your voice library. Until then you can enter a voice ID manually below.</ElevenLabsRequiredNotice>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+              <TriangleAlert className="size-5 text-warning" />
+              <p className="text-sm">Couldn't load voices from ElevenLabs.</p>
+              <p className="text-xs text-muted-foreground">{errorMessage(voices.error)}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => voices.refetch()}>
+                  <RefreshCw /> Retry
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setManual(true)}>
+                  Enter a voice ID instead
+                </Button>
+              </div>
+            </div>
+          )
         ) : filtered.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">{list.length ? "No voices match these filters." : "Your ElevenLabs library has no voices yet."}</div>
         ) : (

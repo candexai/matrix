@@ -8,6 +8,7 @@ import type { Agent } from "@/lib/types";
 import { AgentCard } from "@/components/agents/AgentCard";
 import { ConfirmDialog } from "@/components/agents/ConfirmDialog";
 import { ImportAgentsDialog } from "@/components/agents/ImportAgentsDialog";
+import { ElevenLabsRequired, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -94,16 +95,20 @@ export default function AgentsPage() {
             ))}
           </div>
         ) : agents.isError ? (
-          <EmptyState
-            icon={TriangleAlert}
-            title="Couldn't load agents"
-            description={errorMessage(agents.error)}
-            action={
-              <Button variant="outline" onClick={() => agents.refetch()}>
-                Retry
-              </Button>
-            }
-          />
+          isElevenNotConfigured(agents.error) ? (
+            <ElevenLabsRequired />
+          ) : (
+            <EmptyState
+              icon={TriangleAlert}
+              title="Couldn't load agents"
+              description={errorMessage(agents.error)}
+              action={
+                <Button variant="outline" onClick={() => agents.refetch()}>
+                  Retry
+                </Button>
+              }
+            />
+          )
         ) : total === 0 ? (
           <EmptyState
             icon={AudioWaveform}

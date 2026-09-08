@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler, ok } from "../utils/http";
-import { elevenlabs } from "../services/elevenlabs/client";
+import { getElevenClient } from "../services/elevenlabs/registry";
 import { listPhoneNumbers, invalidatePhoneCache } from "../services/calls.service";
 import { normalizePhone } from "../utils/phone";
 
@@ -55,13 +55,14 @@ const sipBody = z.object({
     .optional(),
 });
 
-router.get("/", asyncHandler(async (req, res) => ok(res, await listPhoneNumbers(req.query.refresh === "1"))));
-router.get("/:id", asyncHandler(async (req, res) => ok(res, await elevenlabs.getPhoneNumber(req.params.id))));
+router.get("/", asyncHandler(async (req, res) => ok(res, await listPhoneNumbers(req.workspaceId, req.query.refresh === "1"))));
+router.get("/:id", asyncHandler(async (req, res) => ok(res, await (await getElevenClient(req.workspaceId)).getPhoneNumber(req.params.id))));
 
 router.post("/twilio", asyncHandler(async (req, res) => {
   const b = twilioBody.parse(req.body);
-  const created = await elevenlabs.importPhoneNumber({ provider: "twilio", ...b, agent_id: b.agent_id || null });
-  invalidatePhoneCache();
+  const eleven = await getElevenClient(req.workspaceId);
+  const created = await eleven.importPhoneNumber({ provider: "twilio", ...b, agent_id: b.agent_id || null });
+  invalidatePhoneCache(req.workspaceId);
   ok(res, created, 201);
 }));
 
@@ -92,8 +93,9 @@ router.post("/sip-trunk", asyncHandler(async (req, res) => {
       credentials: b.inbound.credentials ? { username: b.inbound.credentials.username, password: b.inbound.credentials.password ?? null } : null,
     };
   }
-  const created = await elevenlabs.importPhoneNumber(body);
-  invalidatePhoneCache();
+  const eleven = await getElevenClient(req.workspaceId);
+  const created = await eleven.importPhoneNumber(body);
+  invalidatePhoneCache(req.workspaceId);
   ok(res, created, 201);
 }));
 
@@ -111,14 +113,16 @@ router.patch("/:id", asyncHandler(async (req, res) => {
   if (b.label !== undefined) body.label = b.label;
   if (b.outbound) body.outbound_trunk_config = { address: b.outbound.address, transport: b.outbound.transport, media_encryption: b.outbound.media_encryption, headers: b.outbound.headers ?? {}, credentials: b.outbound.credentials ? { username: b.outbound.credentials.username, password: b.outbound.credentials.password ?? null } : null };
   if (b.inbound) body.inbound_trunk_config = { allowed_addresses: b.inbound.allowed_addresses ?? [], allowed_numbers: b.inbound.allowed_numbers ?? null, media_encryption: b.inbound.media_encryption, credentials: b.inbound.credentials ? { username: b.inbound.credentials.username, password: b.inbound.credentials.password ?? null } : null };
-  const updated = await elevenlabs.updatePhoneNumber(req.params.id, body);
-  invalidatePhoneCache();
+  const eleven = await getElevenClient(req.workspaceId);
+  const updated = await eleven.updatePhoneNumber(req.params.id, body);
+  invalidatePhoneCache(req.workspaceId);
   ok(res, updated);
 }));
 
 router.delete("/:id", asyncHandler(async (req, res) => {
-  await elevenlabs.deletePhoneNumber(req.params.id);
-  invalidatePhoneCache();
+  const eleven = await getElevenClient(req.workspaceId);
+  await eleven.deletePhoneNumber(req.params.id);
+  invalidatePhoneCache(req.workspaceId);
   ok(res, { deleted: true });
 }));
 

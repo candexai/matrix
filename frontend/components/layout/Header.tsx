@@ -12,9 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tip } from "@/components/ui/tooltip";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
+import { isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 
 function BalanceChip() {
-  const { data } = useQuery({ queryKey: ["usage"], queryFn: () => api.get<Usage>("/usage"), staleTime: 5 * 60_000, retry: 0 });
+  const { data, error } = useQuery({ queryKey: ["usage"], queryFn: () => api.get<Usage>("/usage"), staleTime: 5 * 60_000, retry: 0 });
+  // Workspace without its own ElevenLabs key: the 409 is expected — render nothing (Integrations has the connect flow).
+  if (isElevenNotConfigured(error)) return null;
   if (!data?.configured) {
     return (
       <Link href="/integrations" className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[13.5px] text-muted-foreground hover:bg-muted">

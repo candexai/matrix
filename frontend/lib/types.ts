@@ -476,6 +476,18 @@ export interface ZohoAppSettings {
   hasSecret: boolean;
 }
 
+/** Per-workspace ElevenLabs connection (GET/PUT/DELETE /integrations/elevenlabs). */
+export interface ElevenLabsStatus {
+  configured: boolean;
+  /** "workspace" = own key stored for this workspace; "env" = falling back to the server's key (legacy workspace). */
+  source: "workspace" | "env" | null;
+  keyHint: string | null;
+  baseUrl: string | null;
+  region: "us" | "eu" | null;
+  connectedAt: string | null;
+  account: { name?: string; tier?: string; characterCount?: number; characterLimit?: number } | null;
+}
+
 export interface IntegrationItem {
   id: string;
   name: string;

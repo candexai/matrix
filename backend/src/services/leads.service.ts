@@ -166,7 +166,7 @@ export async function getBinding(workspaceId: string, listId?: string | null) {
     inherited = true;
   }
   if (!binding) return null;
-  const agent = await Agent.findById(binding.agentId);
+  const agent = await Agent.findOne({ workspaceId, _id: binding.agentId });
   return { ...binding.toObject(), inherited, agent: agent ? { _id: agent._id, name: agent.name, elevenAgentId: agent.elevenAgentId } : null };
 }
 
@@ -250,7 +250,7 @@ export async function listLeadLists(workspaceId: string) {
     LeadAgentBinding.find({ workspaceId, active: true }),
   ]);
   const agentIds = Array.from(new Set(bindings.map((b) => String(b.agentId))));
-  const agents = await Agent.find({ _id: { $in: agentIds } }, { name: 1 });
+  const agents = await Agent.find({ workspaceId, _id: { $in: agentIds } }, { name: 1 });
   const agentName = new Map(agents.map((a) => [String(a._id), a.name]));
   const bindingFor = (listId: string | null) => {
     const b = bindings.find((x) => x.listId === listId);

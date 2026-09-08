@@ -8,7 +8,7 @@ import { Conversation, ConversationDoc, TranscriptTurn } from "../models/Convers
 import { Lead, LeadDoc } from "../models/Lead";
 import { LeadAgentBinding } from "../models/LeadAgentBinding";
 import { WorkspaceSettings } from "../models/WorkspaceSettings";
-import { RemoteConversation } from "./elevenlabs/client";
+import type { RemoteConversation } from "./elevenlabs/client";
 import { getIntegration, updateLead as zohoUpdateLead, fetchLeadFields } from "./zoho/zohoClient";
 import { extractFieldsFromTranscript, openAiConfigured, ExtractField, isMeaningfulValue } from "./extraction.service";
 import type { ZohoFieldMeta } from "../models/ZohoIntegration";
@@ -143,8 +143,8 @@ export async function upsertConversationFromRemote(workspaceId: string, remote: 
 
   // ---- match to a lead ----
   let lead: LeadDoc | null = null;
-  if (conv.leadId) lead = await Lead.findById(conv.leadId);
-  if (!lead && typeof dyn.lead_id === "string" && Types.ObjectId.isValid(dyn.lead_id)) lead = await Lead.findById(dyn.lead_id);
+  if (conv.leadId) lead = await Lead.findOne({ workspaceId, _id: conv.leadId });
+  if (!lead && typeof dyn.lead_id === "string" && Types.ObjectId.isValid(dyn.lead_id)) lead = await Lead.findOne({ workspaceId, _id: dyn.lead_id });
   if (!lead && externalNumber) {
     const key = phoneKey(externalNumber);
     if (key) lead = await Lead.findOne({ workspaceId, phoneKey: key });
@@ -414,9 +414,9 @@ export async function reprocessPendingExtractions(workspaceId: string, opts: { s
   const errors: string[] = [];
   for (const conv of convs) {
     try {
-      const lead = await Lead.findById(conv.leadId);
+      const lead = await Lead.findOne({ workspaceId, _id: conv.leadId });
       if (!lead) continue;
-      const agentDoc = conv.elevenAgentId ? await Agent.findOne({ elevenAgentId: conv.elevenAgentId }) : null;
+      const agentDoc = conv.elevenAgentId ? await Agent.findOne({ workspaceId, elevenAgentId: conv.elevenAgentId }) : null;
       await applyCollectedDataToLead(conv, lead, agentDoc);
       processed++;
     } catch (err) {

@@ -6,12 +6,14 @@ import { Field } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errorMessage } from "@/lib/api";
+import { ElevenLabsRequiredNotice, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 
 export const AUTO_PHONE = "__auto__";
 
 export function AgentPicker({
   agents,
   loading,
+  error,
   value,
   onChange,
   label = "Voice agent",
@@ -21,6 +23,8 @@ export function AgentPicker({
 }: {
   agents?: Agent[];
   loading?: boolean;
+  /** The agents query error — a missing ElevenLabs key renders a connect notice instead of "no agents". */
+  error?: unknown;
   value: string;
   onChange: (v: string) => void;
   label?: string;
@@ -34,6 +38,13 @@ export function AgentPicker({
     <Field label={label} hint={hint}>
       {loading ? (
         <Skeleton className="h-9 w-full" />
+      ) : isElevenNotConfigured(error) ? (
+        <ElevenLabsRequiredNotice>in Integrations to load your voice agents.</ElevenLabsRequiredNotice>
+      ) : error ? (
+        <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
+          <span>Could not load agents: {errorMessage(error)}</span>
+        </div>
       ) : !agents?.length ? (
         <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
@@ -98,6 +109,8 @@ export function PhonePicker({
     <Field label={label} hint={hint}>
       {loading ? (
         <Skeleton className="h-9 w-full" />
+      ) : isElevenNotConfigured(error) ? (
+        <ElevenLabsRequiredNotice>in Integrations to load your phone numbers.</ElevenLabsRequiredNotice>
       ) : error ? (
         <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />

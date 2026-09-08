@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tip } from "@/components/ui/tooltip";
+import { ElevenLabsRequiredNotice, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { AUTO_PHONE, PhonePicker } from "./AgentPhonePickers";
 import { StatusPicker } from "./StatusPicker";
 import { isRealListId } from "./leadUtils";
@@ -156,25 +157,34 @@ function GeneratingPanel({ captions }: { captions: string[] }) {
 
 function ErrorBox({ error, onRetry, title = "Generation failed" }: { error: ApiError; onRetry?: () => void; title?: string }) {
   const notConfigured = error.code === "OPENAI_NOT_CONFIGURED";
+  const elevenMissing = isElevenNotConfigured(error);
+  const setupIssue = notConfigured || elevenMissing;
   return (
     <div
       role="alert"
       className={cn(
         "flex items-start gap-3 rounded-lg border px-4 py-3 text-sm animate-fade-in",
-        notConfigured ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200" : "border-destructive/40 bg-destructive/5"
+        setupIssue ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200" : "border-destructive/40 bg-destructive/5"
       )}
     >
-      {notConfigured ? <KeyRound className="mt-0.5 size-4 shrink-0" /> : <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />}
+      {setupIssue ? <KeyRound className="mt-0.5 size-4 shrink-0" /> : <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />}
       <div className="min-w-0 flex-1">
-        <div className="font-medium">{notConfigured ? "OpenAI is not configured on the backend" : title}</div>
+        <div className="font-medium">{notConfigured ? "OpenAI is not configured on the backend" : elevenMissing ? "ElevenLabs is not connected to this workspace" : title}</div>
         <p className="mt-0.5 text-[13px] opacity-90">{error.message}</p>
         {notConfigured ? (
           <p className="mt-2 text-[13px]">
             Add <code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-xs dark:bg-amber-900/50">OPENAI_API_KEY</code> to <code className="rounded bg-amber-100 px-1 py-0.5 font-mono text-xs dark:bg-amber-900/50">backend/.env</code> and restart the backend, then try again.
           </p>
+        ) : elevenMissing ? (
+          <p className="mt-2 text-[13px]">
+            <Link href="/integrations" className="font-medium underline underline-offset-2">
+              Connect ElevenLabs in Integrations
+            </Link>
+            , then try again.
+          </p>
         ) : null}
       </div>
-      {onRetry && !notConfigured ? (
+      {onRetry && !setupIssue ? (
         <Button size="sm" variant="outline" onClick={onRetry}>
           <RefreshCw /> Retry
         </Button>
@@ -260,6 +270,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
 
   const generating = phase === "draft" && gen.isPending;
   const creating = phase === "create" && gen.isPending;
+  const elevenMissing = isElevenNotConfigured(voices.error) || isElevenNotConfigured(phones.error);
 
   // Fresh wizard every time it opens.
   useEffect(() => {
@@ -505,6 +516,9 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
         </DialogHeader>
 
         <DialogBody>
+          {elevenMissing && !created && !generating ? (
+            <ElevenLabsRequiredNotice className="mb-5">in Integrations first — the agent is created in your ElevenLabs account, and its voice and phone number come from there.</ElevenLabsRequiredNotice>
+          ) : null}
           {created ? (
             <DoneState created={created} tableName={tableName} isAll={isAll} />
           ) : generating ? (

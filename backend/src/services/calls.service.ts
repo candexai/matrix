@@ -3,20 +3,25 @@ import { Agent, AgentDoc } from "../models/Agent";
 import { Conversation } from "../models/Conversation";
 import { Lead, LeadDoc } from "../models/Lead";
 import { LeadAgentBinding } from "../models/LeadAgentBinding";
-import { elevenlabs, ElevenPhoneNumber } from "./elevenlabs/client";
+import type { ElevenPhoneNumber } from "./elevenlabs/client";
+import { getElevenClient } from "./elevenlabs/registry";
 import { HttpError } from "../utils/http";
 import { normalizePhone } from "../utils/phone";
 
-let phoneCache: { at: number; list: ElevenPhoneNumber[] } | null = null;
+// Phone numbers live in each workspace's own ElevenLabs account → cache per workspace.
+const phoneCache = new Map<string, { at: number; list: ElevenPhoneNumber[] }>();
 
-export function invalidatePhoneCache() {
-  phoneCache = null;
+export function invalidatePhoneCache(workspaceId?: string) {
+  if (workspaceId) phoneCache.delete(workspaceId);
+  else phoneCache.clear();
 }
 
-export async function listPhoneNumbers(force = false): Promise<ElevenPhoneNumber[]> {
-  if (!force && phoneCache && Date.now() - phoneCache.at < 60_000) return phoneCache.list;
-  const list = await elevenlabs.listPhoneNumbers();
-  phoneCache = { at: Date.now(), list };
+export async function listPhoneNumbers(workspaceId: string, force = false): Promise<ElevenPhoneNumber[]> {
+  const hit = phoneCache.get(workspaceId);
+  if (!force && hit && Date.now() - hit.at < 60_000) return hit.list;
+  const eleven = await getElevenClient(workspaceId);
+  const list = await eleven.listPhoneNumbers();
+  phoneCache.set(workspaceId, { at: Date.now(), list });
   return list;
 }
 
@@ -49,10 +54,10 @@ async function resolveAgentAndNumber(workspaceId: string, agentId?: string, phon
     (await LeadAgentBinding.findOne({ workspaceId, listId: null, active: true }));
   let agent: AgentDoc | null = null;
   if (agentId) agent = await Agent.findOne({ workspaceId, $or: [{ _id: Types.ObjectId.isValid(agentId) ? agentId : undefined }, { elevenAgentId: agentId }].filter((x) => Object.values(x)[0] !== undefined) });
-  else if (binding) agent = await Agent.findById(binding.agentId);
+  else if (binding) agent = await Agent.findOne({ workspaceId, _id: binding.agentId });
   if (!agent) throw new HttpError(400, "No voice agent selected. Attach an agent to My Leads or pick one for this call.", "AGENT_REQUIRED");
 
-  const numbers = await listPhoneNumbers();
+  const numbers = await listPhoneNumbers(workspaceId);
   const wantedId = phoneNumberId || binding?.phoneNumberId;
   let phone = wantedId ? numbers.find((n) => n.phone_number_id === wantedId) : undefined;
   if (!phone) phone = numbers.find((n) => n.assigned_agent?.agent_id === agent!.elevenAgentId && n.supports_outbound !== false);
@@ -71,7 +76,8 @@ export async function callLead(workspaceId: string, leadId: string, opts: { agen
   const { agent, phone } = await resolveAgentAndNumber(workspaceId, opts.agentId, opts.phoneNumberId, listId);
   const provider = phone.provider === "sip_trunk" ? "sip_trunk" : "twilio";
   const dyn = { ...leadDynamicVariables(lead, agent), lead_list_id: listId ?? "" };
-  const result = await elevenlabs.outboundCall({
+  const eleven = await getElevenClient(workspaceId);
+  const result = await eleven.outboundCall({
     provider,
     agent_id: agent.elevenAgentId,
     agent_phone_number_id: phone.phone_number_id,
@@ -125,7 +131,8 @@ export async function testCallAgent(workspaceId: string, agentId: string, input:
     phone: to,
     test_call: "true",
   };
-  const result = await elevenlabs.outboundCall({ provider, agent_id: agent.elevenAgentId, agent_phone_number_id: phone.phone_number_id, to_number: to, dynamic_variables: dyn });
+  const eleven = await getElevenClient(workspaceId);
+  const result = await eleven.outboundCall({ provider, agent_id: agent.elevenAgentId, agent_phone_number_id: phone.phone_number_id, to_number: to, dynamic_variables: dyn });
   if (!result.success && !result.conversation_id) throw new HttpError(502, result.message || "ElevenLabs could not place the call", "CALL_FAILED");
   const conv = result.conversation_id
     ? await Conversation.findOneAndUpdate(
@@ -151,7 +158,8 @@ export async function batchCallLeads(workspaceId: string, input: { leadIds: stri
   }
   if (!recipients.length) throw new HttpError(400, "None of the selected leads have a valid phone number", "VALIDATION_ERROR");
 
-  const result = await elevenlabs.submitBatchCall({
+  const eleven = await getElevenClient(workspaceId);
+  const result = await eleven.submitBatchCall({
     call_name: input.callName || `Matrix batch · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
     agent_id: agent.elevenAgentId,
     agent_phone_number_id: phone.phone_number_id,
@@ -160,7 +168,7 @@ export async function batchCallLeads(workspaceId: string, input: { leadIds: stri
   });
 
   const now = new Date();
-  await Lead.updateMany({ _id: { $in: recipients.map((r) => r.lead._id) } }, { $set: { lastCallAt: now, lastCallStatus: "queued", lastAgentId: agent.elevenAgentId } });
+  await Lead.updateMany({ workspaceId, _id: { $in: recipients.map((r) => r.lead._id) } }, { $set: { lastCallAt: now, lastCallStatus: "queued", lastAgentId: agent.elevenAgentId } });
   await Agent.updateOne({ _id: agent._id }, { $inc: { callCount: recipients.length }, $set: { lastCallAt: now } });
   return { batchId: result.id, name: result.name, status: result.status, scheduled: result.total_calls_scheduled ?? recipients.length, skipped: leads.length - recipients.length, agent: { id: agent._id, name: agent.name }, from: phone.phone_number };
 }

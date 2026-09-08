@@ -6,6 +6,7 @@ import { MessageSquare, RefreshCw, Search, Table2, Tag, UserRound, X } from "luc
 import { InsightPaletteStyle } from "@/components/analytics/insights/InsightPaletteStyle";
 import { SentimentDot, TagDot } from "@/components/analytics/insights/primitives";
 import { SENTIMENTS, SENTIMENT_ORDER } from "@/components/analytics/insightColors";
+import { ElevenLabsRequired, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -106,6 +107,8 @@ export function ConversationsPage() {
     limit: 30,
   };
   const { data, isLoading, isFetching, isError, error, refetch } = useConversations(filters);
+  // Only relevant if the list itself refuses without a key — locally stored conversations are never hidden.
+  const elevenMissing = isError && isElevenNotConfigured(error);
   const { data: agents } = useAgents();
   const { data: tagDefs } = useInsightTags();
   const activeTags = useMemo(() => (tagDefs ?? []).filter((t) => t.status === "active").sort((a, b) => b.count - a.count), [tagDefs]);
@@ -311,23 +314,27 @@ export function ConversationsPage() {
         ) : (
           <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
             <aside className="flex w-[380px] shrink-0 flex-col border-r border-border">
-              <ConversationList
-                items={items}
-                total={data?.total ?? 0}
-                page={data?.page ?? page}
-                pages={data?.pages ?? 0}
-                selectedId={selectedId}
-                onSelect={(id) => setParam("id", id)}
-                onPage={setPage}
-                loading={isLoading}
-                fetching={isFetching}
-                error={isError ? errorMessage(error) : null}
-                onRetry={() => refetch()}
-                hasFilters={hasFilters}
-                onClearFilters={clearFilters}
-                emptyTitle={channel === "voice" ? "No voice conversations yet" : "No conversations"}
-                emptyDescription="Calls placed from My Leads or the AI Test page will appear here."
-              />
+              {elevenMissing && items.length === 0 ? (
+                <ElevenLabsRequired className="py-12" description="Conversations are pulled from your ElevenLabs account. Connect it in Integrations to load them here." />
+              ) : (
+                <ConversationList
+                  items={items}
+                  total={data?.total ?? 0}
+                  page={data?.page ?? page}
+                  pages={data?.pages ?? 0}
+                  selectedId={selectedId}
+                  onSelect={(id) => setParam("id", id)}
+                  onPage={setPage}
+                  loading={isLoading}
+                  fetching={isFetching}
+                  error={isError && !elevenMissing ? errorMessage(error) : null}
+                  onRetry={() => refetch()}
+                  hasFilters={hasFilters}
+                  onClearFilters={clearFilters}
+                  emptyTitle={channel === "voice" ? "No voice conversations yet" : "No conversations"}
+                  emptyDescription="Calls placed from My Leads or the AI Test page will appear here."
+                />
+              )}
             </aside>
             <section className="flex min-w-0 flex-1 flex-col">
               {selectedId ? (

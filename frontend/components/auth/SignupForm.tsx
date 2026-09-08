@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAuthStatus, useSignup } from "@/hooks/api";
+import { useSignup } from "@/hooks/api";
 import { errorMessage } from "@/lib/api";
 import { AuthCard } from "./AuthCard";
 import { AuthNotice } from "./AuthNotice";
@@ -41,12 +41,10 @@ function validate(f: FormState): FieldErrors {
 export function SignupForm() {
   const router = useRouter();
   const redirecting = useRedirectIfSignedIn(DEFAULT_AFTER_AUTH);
-  const status = useAuthStatus();
   const signup = useSignup();
   const [form, setForm] = useState<FormState>(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
-  const hasAccounts = status.data?.hasAccounts;
 
   const bind = (key: keyof FormState) => ({
     value: form[key],
@@ -84,20 +82,9 @@ export function SignupForm() {
         </>
       }
     >
-      {hasAccounts === true ? (
-        <AuthNotice tone="info" className="mb-5">
-          Creating a new account gives you a separate, empty workspace. If your team already uses Matrix,{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
-            sign in
-          </Link>{" "}
-          instead.
-        </AuthNotice>
-      ) : null}
-      {hasAccounts === false ? (
-        <AuthNotice tone="brand" className="mb-5">
-          You&apos;re first — this account will own the existing workspace and everything already in it.
-        </AuthNotice>
-      ) : null}
+      <AuthNotice tone="info" className="mb-5">
+        Every account gets its own private workspace. Connect your ElevenLabs and Zoho accounts from Integrations after signing up.
+      </AuthNotice>
 
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">

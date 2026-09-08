@@ -15,7 +15,7 @@ const agentBody = z.object({
 });
 
 router.get("/", asyncHandler(async (req, res) => ok(res, await agents.listAgents(req.workspaceId))));
-router.get("/providers", asyncHandler(async (_req, res) => ok(res, agents.describeProviders())));
+router.get("/providers", asyncHandler(async (req, res) => ok(res, await agents.describeProviders(req.workspaceId))));
 router.post("/webhooks/ensure", asyncHandler(async (req, res) => ok(res, await ensureWebhooksForAllAgents(req.workspaceId))));
 router.get("/remote", asyncHandler(async (req, res) => ok(res, await agents.listRemoteAgents(req.workspaceId))));
 router.post("/import", asyncHandler(async (req, res) => {

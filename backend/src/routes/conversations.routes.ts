@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { asyncHandler, ok, HttpError } from "../utils/http";
 import { Conversation } from "../models/Conversation";
-import { elevenlabs } from "../services/elevenlabs/client";
+import { getElevenClient } from "../services/elevenlabs/registry";
 import { syncConversations, refreshConversation } from "../services/conversations.service";
 import { analyzeConversation } from "../services/insights.service";
 
@@ -75,14 +75,15 @@ router.post("/:id/analyze", asyncHandler(async (req, res) => {
 }));
 router.get("/:id/audio", asyncHandler(async (req, res) => {
   const conv = await findConv(req.workspaceId, req.params.id);
-  const { stream, contentType } = await elevenlabs.getConversationAudio(conv.elevenConversationId);
+  const eleven = await getElevenClient(req.workspaceId);
+  const { stream, contentType } = await eleven.getConversationAudio(conv.elevenConversationId);
   res.setHeader("Content-Type", contentType);
   res.setHeader("Cache-Control", "private, max-age=3600");
   stream.pipe(res);
 }));
 router.delete("/:id", asyncHandler(async (req, res) => {
   const conv = await findConv(req.workspaceId, req.params.id);
-  if (req.query.remote === "true") await elevenlabs.deleteConversation(conv.elevenConversationId).catch(() => undefined);
+  if (req.query.remote === "true") await (await getElevenClient(req.workspaceId)).deleteConversation(conv.elevenConversationId).catch(() => undefined);
   await conv.deleteOne();
   ok(res, { deleted: true });
 }));

@@ -72,7 +72,7 @@ export function BatchCallDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">
-          <AgentPicker agents={agents.data} loading={agents.isLoading} value={agentId} onChange={setAgentId} boundAgentId={binding?.agentId} boundLabel={boundLabel} />
+          <AgentPicker agents={agents.data} loading={agents.isLoading} error={agents.error} value={agentId} onChange={setAgentId} boundAgentId={binding?.agentId} boundLabel={boundLabel} />
           <PhonePicker numbers={phones.data} loading={phones.isLoading} error={phones.error} value={phoneNumberId} onChange={setPhoneNumberId} />
           <Field label="Batch name" hint="optional">
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={defaultBatchName(listName)} />

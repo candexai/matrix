@@ -64,7 +64,7 @@ export function LoginForm() {
             </Link>
           }
         >
-          No accounts yet — create the first one (it will own this workspace).
+          No accounts yet — create the first one to get started.
         </AuthNotice>
       ) : null}
 

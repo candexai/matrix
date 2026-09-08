@@ -14,7 +14,7 @@ matrix/
 |------------------|--------------|
 | `/conversations` | Inbox of voice calls: transcript, audio, summary, collected data, Zoho sync status. Channel pills (Website/WhatsApp/…) are placeholders for later phases. |
 | `/leads`         | **My Leads** — lead tables: every Zoho custom view of the Leads module becomes a table (plus *All leads* and manual lists). Open a table to see its rows, attach a voice agent per table (or a workspace default), call one lead or multi-select and batch-call. |
-| `/agents`        | **Voice Agents** — create/edit ElevenLabs agents with the full configuration surface: LLM, language(s), voice + TTS model, ASR, turn-taking, tools, human transfer, data collection, evaluation, privacy, limits, post-call webhook. Import existing agents from ElevenLabs. |
+| `/agents`        | **Voice Agents** — create/edit ElevenLabs agents with the full configuration surface: LLM, language(s), voice + TTS model, ASR, turn-taking, built-in tools, human transfer, **HTTP tools** (create webhook tools that call your API mid-call) and **knowledge base** documents (URL, text, file upload), data collection, evaluation, privacy, limits, post-call webhook. Import existing agents from ElevenLabs. |
 | `/test`          | **AI Test** — telephonic test: pick an agent and a number from Phone Numbers, enter a mobile number, and the agent rings it; the call's transcript, summary and collected data appear when it ends. A browser-only web call is available via **Preview** on each agent card. |
 | `/analytics`     | **Calls** tab: calls, minutes, outcomes, agent performance, lead funnel, activity heatmap. **Insights** tab: every completed call is read by an LLM and classified into a living taxonomy of at most 12 tags (outcome, sentiment, objection, intent, topic); tags merge as patterns converge and counts are recomputed from the calls, plus sentiment, loss risk, objections and next best actions. |
 | `/phone-numbers` | Import Twilio numbers or SIP-trunk numbers into ElevenLabs, assign them to agents, remove them. These numbers are used for outbound calls from My Leads and AI Test. |
@@ -72,12 +72,14 @@ It starts a local HTTPS server on port 8443 that impersonates the production hos
 ## API (backend, all under `/api/v1`)
 
 - `GET /catalog`, `GET /voices`, `GET /usage`
+- `GET|POST /tools`, `PATCH|DELETE /tools/:id` (ElevenLabs HTTP/webhook tools: method, URL, headers, query/body/path params, dynamic-variable fills)
+- `GET /knowledge-base`, `POST /knowledge-base/url|text|file`, `DELETE /knowledge-base/:id` (ElevenLabs documents; file upload is multipart `file`, max 25 MB)
 - `GET /phone-numbers`, `GET /phone-numbers/:id`, `POST /phone-numbers/twilio`, `POST /phone-numbers/sip-trunk`, `PATCH /phone-numbers/:id` (assign agent / label / trunk config), `DELETE /phone-numbers/:id`
 - `GET|POST /agents`, `GET|PATCH|DELETE /agents/:id`, `POST /agents/:id/sync`, `POST /agents/webhooks/ensure` (attach the current public post-call webhook to every agent), `GET /agents/:id/signed-url`, `POST /agents/:id/test-call` (ring a real phone with the agent), `GET /agents/remote`, `POST /agents/import`, `GET /agents/providers`
 - `GET /lead-lists`, `POST /lead-lists`, `GET|PATCH|DELETE /lead-lists/:id`, `POST|DELETE /lead-lists/:id/leads`, `GET|PUT|DELETE /lead-lists/:id/agent-binding`
 - `GET|POST /leads` (`?listId=`), `GET|PATCH|DELETE /leads/:id`, `GET /leads/:id/conversations`, `POST /leads/:id/call`, `POST /leads/batch-call`, `GET|PUT|DELETE /leads/agent-binding` (workspace default; `?listId=` for a list)
 - `GET /conversations`, `POST /conversations/sync`, `GET /conversations/:id`, `POST /conversations/:id/refresh`, `GET /conversations/:id/audio`, `DELETE /conversations/:id`
-- `GET /integrations`, `GET|PUT|DELETE /integrations/zoho/app` (OAuth client settings), `POST /integrations/zoho/connect`, `GET /integrations/zoho/callback`, `GET /integrations/zoho/status`, `POST /integrations/zoho/sync`, `GET /integrations/zoho/fields`, `DELETE /integrations/zoho/disconnect`
+- `GET /integrations`, `GET|PUT|DELETE /integrations/zoho/app` (OAuth client settings), `POST /integrations/zoho/connect`, `GET /integrations/zoho/callback`, `GET /integrations/zoho/status`, `POST /integrations/zoho/sync`, `GET /integrations/zoho/fields`, `DELETE /integrations/zoho/disconnect[?purge=true]` (purge also deletes imported leads, tables and bindings), `POST /integrations/zoho/purge` (remove imported data, keep connection)
 - `POST /webhooks/elevenlabs/post-call`
 - `GET /analytics/dashboard?days=30` (+ `/summary`, `/trends`, `/agents`, `/outcomes`, `/leads`, `/heatmap`)
 

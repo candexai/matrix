@@ -46,7 +46,7 @@ bash /opt/matrix/deploy/deploy.sh        # git pull → npm ci → build backend
 
 - Backend env: `/opt/matrix/backend/.env` (Mongo, ElevenLabs, Zoho, OpenAI, `PUBLIC_BACKEND_URL=https://edu.candexai.co.in`). After editing: `pm2 restart matrix-backend`.
 - Frontend env: `/opt/matrix/frontend/.env.production` (`NEXT_PUBLIC_API_URL`). It is baked in at build time — after editing run `deploy.sh` again.
-- Basic-auth users: `htpasswd /etc/nginx/matrix.htpasswd <user>` (add/change), `htpasswd -D /etc/nginx/matrix.htpasswd <user>` (remove), then `systemctl reload nginx`.
+- Basic-auth users (only if you re-add the `auth_basic` gate): `htpasswd /etc/nginx/matrix.htpasswd <user>` (add/change), `htpasswd -D /etc/nginx/matrix.htpasswd <user>` (remove), then `systemctl reload nginx`.
 
 ## nginx
 

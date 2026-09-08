@@ -86,7 +86,7 @@ It starts a local HTTPS server on port 8443 that impersonates the production hos
 
 ## Deployment (production)
 
-Live at **https://edu.candexai.co.in** on `root@37.60.249.35` (Ubuntu 24.04): nginx (TLS via certbot, HTTP basic auth) → Next.js on 127.0.0.1:3000 and Express on 127.0.0.1:5001, both managed by pm2 from `/opt/matrix`. One-time provisioning: `deploy/setup-server.sh`; updates: `bash /opt/matrix/deploy/deploy.sh`. The full operations runbook (status, logs, restart, TLS, troubleshooting) is in [deploy/README.md](deploy/README.md).
+Live at **https://edu.candexai.co.in** on `root@37.60.249.35` (Ubuntu 24.04): nginx (TLS via certbot; access via the app's own login) → Next.js on 127.0.0.1:3000 and Express on 127.0.0.1:5001, both managed by pm2 from `/opt/matrix`. One-time provisioning: `deploy/setup-server.sh`; updates: `bash /opt/matrix/deploy/deploy.sh`. The full operations runbook (status, logs, restart, TLS, troubleshooting) is in [deploy/README.md](deploy/README.md).
 
 ## Developer helpers
 

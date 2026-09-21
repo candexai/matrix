@@ -23,8 +23,9 @@ router.delete("/tags/:key", asyncHandler(async (req, res) => {
   ok(res, { deleted: true });
 }));
 router.post("/reanalyze", asyncHandler(async (req, res) => {
-  const body = z.object({ sinceDays: z.number().optional(), max: z.number().optional(), force: z.boolean().optional() }).parse(req.body ?? {});
-  ok(res, await insights.analyzePending(req.workspaceId, body));
+  const { reset, ...body } = z.object({ sinceDays: z.number().optional(), max: z.number().optional(), force: z.boolean().optional(), reset: z.boolean().optional() }).parse(req.body ?? {});
+  const cleared = reset ? await insights.resetInsights(req.workspaceId) : undefined;
+  ok(res, { ...(await insights.analyzePending(req.workspaceId, { ...body, force: body.force || reset })), reset: cleared });
 }));
 
 export default router;

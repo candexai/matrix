@@ -1,9 +1,16 @@
 /**
- * Conversation Insights: after every call an LLM assigns 3–4 tags from a capped, self-organising
- * taxonomy (default 12 tags). The model sees the current taxonomy with counts, must reuse
- * overlapping tags, may add a tag only while there is room, and when the taxonomy is full it must
- * merge two semantically identical tags to make room. Merges rewrite the tagged conversations and
- * counts are recomputed from conversations, so merged counts always sum correctly.
+ * Conversation Insights: after every call an LLM describes the call with up to 5 SPECIFIC tags
+ * (what was discussed, how it ended, what blocked it, anything remarkable) drawn from a capped,
+ * self-organising taxonomy (default 30 tags). The model sees the current taxonomy with usage
+ * shares, reuses a tag only when it means the same specific thing, may add tags while there is
+ * room, and when the taxonomy is full it merges two semantically identical tags to make room.
+ * Merges rewrite the tagged conversations and counts are recomputed from conversations, so merged
+ * counts always sum correctly.
+ *
+ * v2 (2026-09): v1 forced one tag per generic dimension and told the model to always reuse, which
+ * collapsed onto the same five labels for every call ("Interested / Neutral Caller / Wants More
+ * Info / No Objection / Send Details"). v2 bans filler, flags overused tags in the prompt, lets
+ * thin calls carry fewer tags and shows the most distinctive tags first.
  */
 import { Conversation, ConversationDoc, ConversationInsights } from "../models/Conversation";
 import { InsightTag, InsightTagDoc, InsightCategory, INSIGHT_CATEGORIES } from "../models/InsightTag";
@@ -11,9 +18,18 @@ import { defaultOpenAICaller, OpenAICaller, openAiConfigured, transcriptToText }
 import { HttpError } from "../utils/http";
 import type { Range } from "./analytics.service";
 
-export const INSIGHTS_VERSION = 1;
-export const TAG_CAP = Math.max(5, Number(process.env.INSIGHT_TAG_CAP || 15));
+export const INSIGHTS_VERSION = 2;
+export const TAG_CAP = Math.max(5, Number(process.env.INSIGHT_TAG_CAP || 30));
 const TAGS_PER_CALL = 5;
+/** A tag on this share of analysed calls (once enough calls exist) no longer distinguishes anything. */
+const OVERUSED_SHARE = 0.4;
+const OVERUSED_MIN_CALLS = 8;
+/** Labels that say nothing about a call; dropped even if the model returns them. */
+const FILLER_KEYS = new Set(["no_objection", "no_objections", "no_objection_raised", "none", "n_a", "na", "neutral_caller", "neutral", "neutral_sentiment", "neutral_tone", "general_inquiry", "general_enquiry", "no_next_step", "no_blocker", "no_concerns", "call_successful", "successful_call", "call_success", "call_completed", "completed_call", "call_answered", "call_connected"]);
+
+export function isOverused(count: number, analysedCalls: number): boolean {
+  return analysedCalls >= OVERUSED_MIN_CALLS && count / analysedCalls >= OVERUSED_SHARE;
+}
 
 let caller: OpenAICaller = defaultOpenAICaller;
 export function setInsightsCaller(fn?: OpenAICaller) {
@@ -66,31 +82,48 @@ interface LlmOutput {
   key_quote?: string;
 }
 
-export function buildInsightsPrompt(conv: ConversationDoc, taxonomy: InsightTagDoc[], cap: number): { system: string; user: string } {
+export function buildInsightsPrompt(conv: ConversationDoc, taxonomy: InsightTagDoc[], cap: number, analysedCalls = 0): { system: string; user: string } {
   const room = Math.max(0, cap - taxonomy.length);
-  const system = [
-    "You are the conversation-insights engine of a sales CRM. After each phone call between an AI voice agent and a lead you classify the call into a SMALL, STABLE taxonomy of tags the business uses to track outcomes, objections, sentiment and intent over time, and you extract a few structured signals.",
-    `TAXONOMY RULES: the taxonomy is capped at ${cap} tags and currently has ${taxonomy.length} (room for ${room} new). Existing tags are listed with their counts. ALWAYS reuse an existing tag when the meaning overlaps, even if the wording differs (e.g. "not happy" and "aggressive caller" both belong to a tag like "Frustrated caller"). Only propose a NEW tag when no existing tag fits AND there is room. If there is no room but a new tag is essential, you MUST propose a MERGE of two existing tags that mean the same thing for the business (their counts will be summed) and then add the new tag. Never merge tags that mean different things. Prefer fewer, broader, business-meaningful tags.`,
-    `TAGGING RULES: assign EXACTLY ${TAGS_PER_CALL} tags per call, one for each dimension, so that the five tags together tell the whole story of the call: (1) OUTCOME — how the call ended for the business (e.g. Interested, Not Interested, Meeting Booked, Callback Requested, Voicemail / No Answer, Wrong Number); (2) SENTIMENT — how the caller felt/behaved (e.g. Positive Caller, Neutral Caller, Frustrated Caller, Hesitant Caller); (3) INTENT / TOPIC — what the caller needs or the main subject discussed (e.g. Wants More Info, Budget Shared, Timeline Shared, Comparing Options, Enrollment Query, Pricing Discussed); (4) OBJECTION / BLOCKER — the main reason for hesitation, or "No Objection" if none (e.g. Price Objection, No Time, Already Has Vendor, Needs Approval, Language Barrier); (5) NEXT STEP — what should happen next (e.g. Send Details, Follow Up Later, Book Site Visit, Transfer To Human, Do Not Call). Reuse existing tags from any category when the meaning overlaps. Labels are 2–4 words in Title Case; keys are snake_case of the label. Each tag needs a short verbatim evidence quote (translated to English) from the transcript.`,
+  const system_extra: string[] = [];
+  const system_base = [
+    "You are the conversation-insights engine of a sales CRM. After each phone call between an AI voice agent and a lead you (a) describe the call with a few SPECIFIC tags and (b) extract a few structured signals.",
+    "WHY TAGS EXIST: tags are shown as chips on a list of calls and counted in analytics. Someone scanning the list must see, from the chips alone, what happened in THIS call and how it differs from the other calls. A tag that would fit almost every call carries no information.",
+    `WHAT TO TAG: up to ${TAGS_PER_CALL} tags that together tell the story of this call, MOST TELLING FIRST. (1) TOPICS, 1-3 tags: what the caller actually asked about or discussed, named in this business's own vocabulary (education: "Scholarship Query", "Exam Date Asked", "Fee Structure Asked", "Hostel Query", "Course Eligibility Asked"; real estate: "Site Visit Query", "Loan Eligibility Asked"). (2) OUTCOME, 1 tag: how the call ended for the business ("Callback Requested", "Meeting Booked", "Details To Be Sent", "Not Interested", "Wrong Person", "Hung Up Mid-call", "Asked To Call Later"). Use "Interested" only when the caller explicitly said they want to buy / enrol / proceed. (3) BLOCKER, 0-1 tag: only when the caller raised a real objection or obstacle ("Price Too High", "Already Enrolled Elsewhere", "Needs Parent Approval", "Busy Right Now"). (4) NOTABLE BEHAVIOUR, 0-1 tag: only when remarkable for the business ("Angry Caller", "Very Enthusiastic", "Language Switch Requested", "Suspicious Of AI Caller", "Off-topic Questions"). A rich conversation should get ${TAGS_PER_CALL} tags. Categories: topics use "topic" (or "intent" for what the caller wants to do), outcome uses "outcome", blocker uses "objection", notable behaviour uses "sentiment", an agreed next step uses "action".`,
+    'IGNORE ROUTINE STEPS: greetings, "who is this?", "where are you calling from?", identity confirmation, agreeing to talk ("yes, go ahead") and picking the call language when the agent offers a choice happen in most calls. When the call went on to real content do not tag them at all; tag them only when that was the whole call (see THIN CALLS). Tag a language issue only when it disrupted the call (the agent could not speak the caller\'s language, or the caller demanded a switch mid-call).',
+    "TAG THE CALLER, AT THE RIGHT LEVEL: topic tags describe what the CALLER asked, wanted or told us - not what the agent recited. Keep a topic tag at the level of a subject that will recur across many leads (\"Course Inquiry\", \"Fee Structure Asked\", \"Scholarship Query\", \"Exam Date Asked\", \"Placement Query\", \"Education Loan Query\") rather than one tag per specific course, product or plan name - the specific name belongs in intent / summary.",
+    'NEVER output filler: no "No Objection", "Neutral Caller", "General Inquiry", "Call Successful", "Call Completed" (the outcome tag must say WHAT was achieved or agreed); not "Wants More Info" (say WHAT information) and not "Send Details" (say WHICH details). Ordinary or neutral sentiment belongs in the sentiment field, not in a tag.',
+    'THIN CALLS: when the caller said almost nothing, only greeted, asked who is calling, or the call dropped within seconds, output just 1-2 tags that say exactly that ("Call Dropped Early", "No Real Conversation", "Asked Who Is Calling", "Voicemail Reached"). Never claim interest that was not expressed. These "nothing happened" tags are ONLY for thin calls: never add one to a call that has real content.',
+    "SELF-CHECK before answering: for every tag, the evidence must be something the CALLER said in THIS transcript that directly supports the tag. If you cannot quote the caller for it, drop the tag or replace it with an accurate one. A workspace can run several campaigns (different businesses, products, audiences): never reuse a tag that belongs to a different campaign's subject just because it exists.",
+    "LABELS: 2-4 words, Title Case, English. Keys are snake_case of the label. Every tag needs a short evidence quote from the transcript (translated to English).",
+    `TAXONOMY: tags live in a shared vocabulary capped at ${cap} tags; it currently has ${taxonomy.length} (room for ${room} new). Each existing tag is listed with how many calls use it and a description of when it applies - respect that description. REUSE an existing tag when it means the same specific thing even if the wording differs ("Scholarship Details Asked" = "Scholarship Query"). Do NOT stretch a tag over a different subject just to reuse it: while there is room, create a new specific tag instead. Tags marked OVERUSED sit on a large share of all calls and have stopped being informative - avoid them unless they are the single most important fact of this call, and prefer something more specific. If there is no room for an essential new tag, propose a MERGE of two existing tags that mean the same thing for the business (their counts are summed, which frees a slot). Never merge tags that mean different things.`,
     'SIGNALS: sentiment_score from -1 (very negative) to 1 (very positive); sentiment = positive|neutral|negative; caller_mood = one or two words; intent = what the lead wants in a few words; outcome = short phrase; objections = list of short phrases (empty if none); loss_risk = probability 0..1 that this lead will be lost; next_best_action = one concrete sentence for the sales team; key_quote = the single most telling caller quote.',
-    "LANGUAGE: whatever language the call was in (Hindi, Hinglish, English or other), write EVERYTHING in English using Roman/Latin script — including evidence quotes and key_quote (translate them; never output Devanagari or other non-Latin scripts).",
-    'OUTPUT: strict JSON only: {"tags":[{"key":"","label":"","category":"outcome|sentiment|objection|intent|topic|action","description":"","evidence":""}],"merges":[{"from":"key","into":"key","label":"optional new label","reason":""}],"sentiment":"","sentiment_score":0,"caller_mood":"","intent":"","outcome":"","objections":[],"loss_risk":0,"next_best_action":"","key_quote":""}. For existing tags set key to the existing key; description only for new tags.',
-  ].join("\n");
+    "LANGUAGE: whatever language the call was in (Hindi, Hinglish, English or other), write EVERYTHING in English using Roman/Latin script - including evidence quotes and key_quote (translate them; never output Devanagari or other non-Latin scripts).",
+    'OUTPUT: strict JSON only: {"tags":[{"key":"","label":"","category":"topic|intent|outcome|objection|sentiment|action","description":"","evidence":""}],"merges":[{"from":"key","into":"key","label":"optional new label","reason":""}],"sentiment":"","sentiment_score":0,"caller_mood":"","intent":"","outcome":"","objections":[],"loss_risk":0,"next_best_action":"","key_quote":""}. For existing tags set key to the existing key and omit description. For a NEW tag the description is REQUIRED: one precise sentence saying who says what for the tag to apply (e.g. "Caller asks about scholarship amounts or eligibility."), so that later calls reuse it only when it truly fits. Evidence quotes MUST be in English.',
+  ];
 
+  if (room <= 5) system_extra.push(`The taxonomy is ${room === 0 ? "FULL" : "nearly full"}. Prefer an existing broader tag over a new one (one tag per course / product / plan does not scale - use e.g. "Course Inquiry" and let the summary carry the detail), and propose MERGES of near-duplicate tags so that room appears.`);
   const tax = taxonomy.length
-    ? taxonomy.map((t) => `- ${t.key} | "${t.label}" | ${t.category} | used ${t.count}× | ${t.description}`).join("\n")
-    : "(empty — this is the first analysed call; create a sensible starting set)";
+    ? taxonomy
+        .map((t) => {
+          const share = analysedCalls > 0 ? ` (${Math.round((t.count / analysedCalls) * 100)}% of calls)` : "";
+          return `- ${t.key} | "${t.label}" | ${t.category} | used ${t.count}×${share}${isOverused(t.count, analysedCalls) ? " | OVERUSED" : ""} | ${t.description}`;
+        })
+        .join("\n")
+    : "(empty - this is the first analysed call; create specific tags for it)";
+  const callerTurns = (conv.transcript ?? []).filter((t) => t.role !== "agent" && t.message?.trim()).length;
   const meta = [
     conv.leadName ? `Lead: ${conv.leadName}` : "",
     conv.direction ? `Direction: ${conv.direction}` : "",
     typeof conv.durationSecs === "number" ? `Duration: ${conv.durationSecs}s` : "",
+    `Caller turns: ${callerTurns}`,
     conv.terminationReason ? `Ended by: ${conv.terminationReason}` : "",
     conv.callSuccessful ? `Platform-graded outcome: ${conv.callSuccessful}` : "",
     conv.summary ? `Summary: ${conv.summary}` : "",
   ]
     .filter(Boolean)
     .join("\n");
-  const user = [`Existing taxonomy (${taxonomy.length}/${cap}):`, tax, "", "Call metadata:", meta, "", "Transcript:", transcriptToText(conv.transcript ?? [])].join("\n");
+  const system = [...system_base.slice(0, -1), ...system_extra, system_base[system_base.length - 1]].join("\n");
+  const user = [`Existing taxonomy (${taxonomy.length}/${cap}), ${analysedCalls} calls analysed so far:`, tax, "", "Call metadata:", meta, "", "Transcript:", transcriptToText(conv.transcript ?? [])].join("\n");
   return { system, user };
 }
 
@@ -205,7 +238,8 @@ export async function analyzeConversation(conv: ConversationDoc, opts: { force?:
   return withLock(conv.workspaceId, async () => {
     const model = process.env.OPENAI_INSIGHTS_MODEL || process.env.OPENAI_MODEL || "gpt-4.1-mini";
     const taxonomy: InsightTagDoc[] = await InsightTag.find({ workspaceId: conv.workspaceId, status: "active" }).sort({ count: -1 });
-    const { system, user } = buildInsightsPrompt(conv, taxonomy, TAG_CAP);
+    const analysedCalls = await Conversation.countDocuments({ workspaceId: conv.workspaceId, _id: { $ne: conv._id }, "insights.tags.0": { $exists: true } });
+    const { system, user } = buildInsightsPrompt(conv, taxonomy, TAG_CAP, analysedCalls);
     let out: LlmOutput;
     try {
       out = parseJson(await caller([{ role: "system", content: system }, { role: "user", content: user }], model));
@@ -246,13 +280,16 @@ export async function analyzeConversation(conv: ConversationDoc, opts: { force?:
       const label = titleCase(String(raw.label || raw.key || "").replace(/_/g, " ")).slice(0, 48);
       if (!label) continue;
       const key = slug(raw.key || label);
+      if (FILLER_KEYS.has(key) || FILLER_KEYS.has(slug(label))) continue; // says nothing about the call
       let tag = resolveKey(key) ?? active.find((t) => t.status === "active" && t.label.toLowerCase() === label.toLowerCase());
       if (!tag) {
         if (activeCount >= TAG_CAP) {
           console.warn(`[insights] taxonomy full (${TAG_CAP}); dropping new tag "${label}" for ${conv.elevenConversationId}`);
           continue;
         }
-        const category = (INSIGHT_CATEGORIES as string[]).includes(String(raw.category)) ? (raw.category as InsightCategory) : "topic";
+        const CATEGORY_ALIASES: Record<string, InsightCategory> = { notable_behaviour: "sentiment", notable_behavior: "sentiment", behaviour: "sentiment", behavior: "sentiment", blocker: "objection", next_step: "action", topics: "topic" };
+        const rawCategory = slug(String(raw.category ?? ""));
+        const category = (INSIGHT_CATEGORIES as string[]).includes(rawCategory) ? (rawCategory as InsightCategory) : CATEGORY_ALIASES[rawCategory] ?? "topic";
         tag = await InsightTag.create({ workspaceId: conv.workspaceId, key, label, description: String(raw.description ?? "").slice(0, 200), category, color: await nextColor(conv.workspaceId), createdBy: "llm" });
         byKey.set(key, tag);
         active.push(tag);
@@ -263,6 +300,11 @@ export async function analyzeConversation(conv: ConversationDoc, opts: { force?:
       finalTags.push({ key: tag.key, label: tag.label, category: tag.category, evidence: raw.evidence ? String(raw.evidence).slice(0, 240) : undefined });
       if (finalTags.length >= TAGS_PER_CALL) break;
     }
+
+    // Distinctive tags first: the call list shows only the first few chips, so push tags that sit on a large
+    // share of all calls (legitimately common outcomes such as "Callback Requested") behind the specific ones.
+    const overused = (key: string) => isOverused(byKey.get(key)?.count ?? 0, analysedCalls);
+    finalTags.sort((a, b) => Number(overused(a.key)) - Number(overused(b.key)));
 
     // 3) store insights on the conversation
     const sentimentScore = clamp(out.sentiment_score, -1, 1, 0);
@@ -296,6 +338,18 @@ export async function analyzeConversation(conv: ConversationDoc, opts: { force?:
     }
     await recountTags(conv.workspaceId);
     return conv.insights;
+  });
+}
+
+/**
+ * Forget the whole taxonomy and every stored analysis of a workspace, so a following re-analysis builds the
+ * vocabulary from scratch (used after the tagging rules change: old tags would otherwise bias the new run).
+ */
+export async function resetInsights(workspaceId: string): Promise<{ tagsRemoved: number; conversationsCleared: number }> {
+  return withLock(workspaceId, async () => {
+    const tags = await InsightTag.deleteMany({ workspaceId });
+    const convs = await Conversation.updateMany({ workspaceId, insights: { $exists: true } }, { $unset: { insights: "" } });
+    return { tagsRemoved: tags.deletedCount ?? 0, conversationsCleared: convs.modifiedCount ?? 0 };
   });
 }
 

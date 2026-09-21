@@ -27,6 +27,15 @@ const OVERUSED_MIN_CALLS = 8;
 /** Labels that say nothing about a call; dropped even if the model returns them. */
 const FILLER_KEYS = new Set(["no_objection", "no_objections", "no_objection_raised", "none", "n_a", "na", "neutral_caller", "neutral", "neutral_sentiment", "neutral_tone", "general_inquiry", "general_enquiry", "no_next_step", "no_blocker", "no_concerns", "call_successful", "successful_call", "call_success", "call_completed", "completed_call", "call_answered", "call_connected"]);
 
+/**
+ * Routine facts of almost any call (who hung up, the language picked from the agent's menu, a bare "yes, go ahead").
+ * Dropped whenever the call has at least one real tag; kept only when nothing else describes the call.
+ */
+const ROUTINE_PATTERNS = [/^call_(disconnected|ended|terminated|hung_up)/, /^(caller|client|user|lead)_(disconnected|hung_up|ended_call)/, /^language_(preference|choice|selected|selection)/, /^(preferred|chosen)_language/, /^brief_(confirmation|consent|positive|acknowledg|response|reply)/, /^consent_given/, /^greeting_only$/];
+export function isRoutineTag(key: string): boolean {
+  return ROUTINE_PATTERNS.some((re) => re.test(key));
+}
+
 export function isOverused(count: number, analysedCalls: number): boolean {
   return analysedCalls >= OVERUSED_MIN_CALLS && count / analysedCalls >= OVERUSED_SHARE;
 }
@@ -89,7 +98,7 @@ export function buildInsightsPrompt(conv: ConversationDoc, taxonomy: InsightTagD
     "You are the conversation-insights engine of a sales CRM. After each phone call between an AI voice agent and a lead you (a) describe the call with a few SPECIFIC tags and (b) extract a few structured signals.",
     "WHY TAGS EXIST: tags are shown as chips on a list of calls and counted in analytics. Someone scanning the list must see, from the chips alone, what happened in THIS call and how it differs from the other calls. A tag that would fit almost every call carries no information.",
     `WHAT TO TAG: up to ${TAGS_PER_CALL} tags that together tell the story of this call, MOST TELLING FIRST. (1) TOPICS, 1-3 tags: what the caller actually asked about or discussed, named in this business's own vocabulary (education: "Scholarship Query", "Exam Date Asked", "Fee Structure Asked", "Hostel Query", "Course Eligibility Asked"; real estate: "Site Visit Query", "Loan Eligibility Asked"). (2) OUTCOME, 1 tag: how the call ended for the business ("Callback Requested", "Meeting Booked", "Details To Be Sent", "Not Interested", "Wrong Person", "Hung Up Mid-call", "Asked To Call Later"). Use "Interested" only when the caller explicitly said they want to buy / enrol / proceed. (3) BLOCKER, 0-1 tag: only when the caller raised a real objection or obstacle ("Price Too High", "Already Enrolled Elsewhere", "Needs Parent Approval", "Busy Right Now"). (4) NOTABLE BEHAVIOUR, 0-1 tag: only when remarkable for the business ("Angry Caller", "Very Enthusiastic", "Language Switch Requested", "Suspicious Of AI Caller", "Off-topic Questions"). A rich conversation should get ${TAGS_PER_CALL} tags. Categories: topics use "topic" (or "intent" for what the caller wants to do), outcome uses "outcome", blocker uses "objection", notable behaviour uses "sentiment", an agreed next step uses "action".`,
-    'IGNORE ROUTINE STEPS: greetings, "who is this?", "where are you calling from?", identity confirmation, agreeing to talk ("yes, go ahead") and picking the call language when the agent offers a choice happen in most calls. When the call went on to real content do not tag them at all; tag them only when that was the whole call (see THIN CALLS). Tag a language issue only when it disrupted the call (the agent could not speak the caller\'s language, or the caller demanded a switch mid-call).',
+    'IGNORE ROUTINE STEPS: greetings, "who is this?", "where are you calling from?", identity confirmation, agreeing to talk ("yes, go ahead") and picking the call language when the agent offers a choice, and the caller hanging up once the conversation is over happen in most calls (the "Ended by" metadata is never a tag). When the call went on to real content do not tag them at all; tag them only when that was the whole call (see THIN CALLS). Tag a language issue only when it disrupted the call (the agent could not speak the caller\'s language, or the caller demanded a switch mid-call).',
     "TAG THE CALLER, AT THE RIGHT LEVEL: topic tags describe what the CALLER asked, wanted or told us - not what the agent recited. Keep a topic tag at the level of a subject that will recur across many leads (\"Course Inquiry\", \"Fee Structure Asked\", \"Scholarship Query\", \"Exam Date Asked\", \"Placement Query\", \"Education Loan Query\") rather than one tag per specific course, product or plan name - the specific name belongs in intent / summary.",
     'NEVER output filler: no "No Objection", "Neutral Caller", "General Inquiry", "Call Successful", "Call Completed" (the outcome tag must say WHAT was achieved or agreed); not "Wants More Info" (say WHAT information) and not "Send Details" (say WHICH details). Ordinary or neutral sentiment belongs in the sentiment field, not in a tag.',
     'THIN CALLS: when the caller said almost nothing, only greeted, asked who is calling, or the call dropped within seconds, output just 1-2 tags that say exactly that ("Call Dropped Early", "No Real Conversation", "Asked Who Is Calling", "Voicemail Reached"). Never claim interest that was not expressed. These "nothing happened" tags are ONLY for thin calls: never add one to a call that has real content.',
@@ -276,11 +285,17 @@ export async function analyzeConversation(conv: ConversationDoc, opts: { force?:
     let activeCount = active.filter((t) => t.status === "active").length;
     const finalTags: ConversationInsights["tags"] = [];
     const seen = new Set<string>();
-    for (const raw of (out.tags ?? []).slice(0, TAGS_PER_CALL + 2)) {
+    const proposed = (out.tags ?? []).slice(0, TAGS_PER_CALL + 3);
+    const hasRealTag = proposed.some((t) => {
+      const k = slug(t.key || t.label || "");
+      return k && !isRoutineTag(k) && !FILLER_KEYS.has(k);
+    });
+    for (const raw of proposed) {
       const label = titleCase(String(raw.label || raw.key || "").replace(/_/g, " ")).slice(0, 48);
       if (!label) continue;
       const key = slug(raw.key || label);
       if (FILLER_KEYS.has(key) || FILLER_KEYS.has(slug(label))) continue; // says nothing about the call
+      if (hasRealTag && (isRoutineTag(key) || isRoutineTag(slug(label)))) continue; // routine fact next to real content
       let tag = resolveKey(key) ?? active.find((t) => t.status === "active" && t.label.toLowerCase() === label.toLowerCase());
       if (!tag) {
         if (activeCount >= TAG_CAP) {

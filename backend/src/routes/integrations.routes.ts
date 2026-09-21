@@ -16,12 +16,16 @@ import { reprocessPendingExtractions } from "../services/postCall.service";
 import { analyzePending } from "../services/insights.service";
 import { elevenStatus, connectEleven, disconnectEleven } from "../services/elevenlabs/registry";
 import { pythonService } from "../services/elevenlabs/pythonService";
+import { getWorkspaceSettings } from "../models/WorkspaceSettings";
 
 const router = Router();
 
 /** Catalog of integrations shown on the Integrations page. Only Zoho + ElevenLabs are live in this phase. */
 router.get("/", asyncHandler(async (req, res) => {
-  const [integ, leadCount, zohoOk, eleven] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" }), zoho.zohoConfigured(req.workspaceId), elevenStatus(req.workspaceId, { probe: false })]);
+  const [integ, leadCount, zohoOk, eleven, settings] = await Promise.all([zoho.getIntegration(req.workspaceId), Lead.countDocuments({ workspaceId: req.workspaceId, source: "zoho" }), zoho.zohoConfigured(req.workspaceId), elevenStatus(req.workspaceId, { probe: false }), getWorkspaceSettings(req.workspaceId)]);
+  const requests = new Map((settings.integrationRequests ?? []).map((r) => [r.id, r.requestedAt]));
+  /** A not-yet-live integration: the card offers Connect, which records an access request for this workspace. */
+  const upcoming = (id: string, name: string, category: string, note?: string) => ({ id, name, category, available: false, note, requested: requests.has(id), requestedAt: requests.get(id) ?? null });
   ok(res, {
     crm: [
       {
@@ -40,9 +44,9 @@ router.get("/", asyncHandler(async (req, res) => {
         leadCount,
         redirectUri: (await zoho.getZohoApp(req.workspaceId))?.redirectUri ?? `${env.PUBLIC_BACKEND_URL}/api/v1/integrations/zoho/callback`,
       },
-      { id: "hubspot", name: "HubSpot", category: "crm", available: false },
-      { id: "salesforce", name: "Salesforce", category: "crm", available: false },
-      { id: "pipedrive", name: "Pipedrive", category: "crm", available: false },
+      upcoming("hubspot", "HubSpot", "crm"),
+      upcoming("salesforce", "Salesforce", "crm"),
+      upcoming("pipedrive", "Pipedrive", "crm"),
     ],
     voice: [
       {
@@ -61,22 +65,45 @@ router.get("/", asyncHandler(async (req, res) => {
         // the FastAPI wrapper carries its own copy of the env key → only meaningful for the env-backed workspace
         pythonService: pythonService.configured && eleven.source === "env" ? env.ELEVENLABS_SERVICE_URL : null,
       },
-      { id: "twilio", name: "Twilio", category: "voice", available: false, note: "Import numbers from Phone Numbers" },
+      upcoming("twilio", "Twilio", "voice", "Import numbers from Phone Numbers"),
     ],
     channels: [
-      { id: "website", name: "Website chat", category: "channels", available: false },
-      { id: "whatsapp", name: "WhatsApp", category: "channels", available: false },
-      { id: "instagram", name: "Instagram", category: "channels", available: false },
-      { id: "facebook", name: "Facebook Messenger", category: "channels", available: false },
-      { id: "telegram", name: "Telegram", category: "channels", available: false },
-      { id: "email", name: "Email", category: "channels", available: false },
+      upcoming("website", "Website chat", "channels"),
+      upcoming("whatsapp", "WhatsApp", "channels"),
+      upcoming("instagram", "Instagram", "channels"),
+      upcoming("facebook", "Facebook Messenger", "channels"),
+      upcoming("telegram", "Telegram", "channels"),
+      upcoming("email", "Email", "channels"),
     ],
     productivity: [
-      { id: "google-calendar", name: "Google Calendar", category: "productivity", available: false },
-      { id: "calendly", name: "Calendly", category: "productivity", available: false },
-      { id: "slack", name: "Slack", category: "productivity", available: false },
+      upcoming("google-calendar", "Google Calendar", "productivity"),
+      upcoming("calendly", "Calendly", "productivity"),
+      upcoming("slack", "Slack", "productivity"),
     ],
   });
+}));
+
+// ---------- Upcoming integrations: Connect = request access for this workspace ----------
+const UPCOMING_IDS = ["hubspot", "salesforce", "pipedrive", "twilio", "website", "whatsapp", "instagram", "facebook", "telegram", "email", "google-calendar", "calendly", "slack"] as const;
+router.post("/:id/request", asyncHandler(async (req, res) => {
+  const id = z.enum(UPCOMING_IDS).parse(req.params.id);
+  const settings = await getWorkspaceSettings(req.workspaceId);
+  const list = settings.integrationRequests ?? [];
+  let entry = list.find((r) => r.id === id);
+  if (!entry) {
+    entry = { id, requestedBy: req.user?.email, requestedAt: new Date() };
+    settings.integrationRequests = [...list, entry];
+    await settings.save();
+    console.log(`[integrations] workspace ${req.workspaceId} (${req.user?.email ?? "unknown"}) requested "${id}"`);
+  }
+  ok(res, { id, requested: true, requestedAt: entry.requestedAt }, 201);
+}));
+router.delete("/:id/request", asyncHandler(async (req, res) => {
+  const id = z.enum(UPCOMING_IDS).parse(req.params.id);
+  const settings = await getWorkspaceSettings(req.workspaceId);
+  settings.integrationRequests = (settings.integrationRequests ?? []).filter((r) => r.id !== id);
+  await settings.save();
+  ok(res, { id, requested: false, requestedAt: null });
 }));
 
 // ---------- ElevenLabs (per-workspace API key) ----------

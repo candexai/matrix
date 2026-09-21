@@ -91,7 +91,7 @@ function mapStatus(remoteStatus: string | undefined): ConversationDoc["status"] 
 
 /** Upsert a Conversation document from a full remote conversation (webhook `data` or GET /conversations/:id). */
 export async function upsertConversationFromRemote(workspaceId: string, remote: RemoteConversation): Promise<ConversationDoc> {
-  const dyn = (remote.conversation_initiation_client_data?.dynamic_variables ?? {}) as Record<string, unknown>;
+  const { system__conversation_history: _engineHistory, ...dyn } = (remote.conversation_initiation_client_data?.dynamic_variables ?? {}) as Record<string, unknown>; // the history blob duplicates the transcript
   const phoneCall = remote.metadata?.phone_call ?? null;
   const externalNumber = phoneCall?.external_number ? normalizePhone(phoneCall.external_number) ?? phoneCall.external_number : (dyn.phone as string | undefined);
   const direction = (phoneCall?.direction as "inbound" | "outbound" | undefined) ?? (dyn.lead_id ? "outbound" : undefined);

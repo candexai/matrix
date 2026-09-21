@@ -9,6 +9,8 @@ export interface WorkspaceSettingsDoc extends Document {
   /** ElevenLabs API key of this workspace (encrypted). Only the legacy "default" workspace may fall back to ELEVENLABS_API_KEY. */
   elevenLabs?: { apiKeyEnc: string; baseUrl: string; keyHint: string; connectedAt: Date; accountName?: string };
   defaultPhoneNumberId?: string;
+  /** Upcoming integrations this workspace asked to be connected (Integrations → Connect on a not-yet-live card). */
+  integrationRequests?: { id: string; requestedBy?: string; requestedAt: Date }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +23,7 @@ const WorkspaceSettingsSchema = new Schema<WorkspaceSettingsDoc>(
     zohoApp: { clientId: String, clientSecretEnc: String, accountsUrl: String, redirectUri: String, updatedAt: Date },
     elevenLabs: { apiKeyEnc: String, baseUrl: String, keyHint: String, connectedAt: Date, accountName: String },
     defaultPhoneNumberId: String,
+    integrationRequests: { type: [{ _id: false, id: String, requestedBy: String, requestedAt: Date }], default: [] },
   },
   { timestamps: true }
 );

@@ -12,7 +12,8 @@
     "test:pipeline": "ts-node --transpile-only src/scripts/testPostCallPipeline.ts",
     "zoho:bridge": "node scripts/zoho-oauth-bridge.mjs",
     "insights:reanalyze": "node dist/scripts/reanalyzeInsights.js",
-    "auth:assign-workspace": "node dist/scripts/assignWorkspace.js"
+    "auth:assign-workspace": "node dist/scripts/assignWorkspace.js",
+    "auth:set-password": "node dist/scripts/setPassword.js"
   },
   "dependencies": {
     "axios": "^1.13.1",

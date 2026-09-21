@@ -6,6 +6,7 @@ import { Conversation } from "../models/Conversation";
 import { getElevenClient } from "../services/elevenlabs/registry";
 import { syncConversations, refreshConversation } from "../services/conversations.service";
 import { analyzeConversation } from "../services/insights.service";
+import { createLeadFromConversation, getConversationProfile } from "../services/conversationProfile.service";
 
 const router = Router();
 
@@ -62,16 +63,37 @@ async function findConv(workspaceId: string, id: string) {
   return conv;
 }
 
-router.get("/:id", asyncHandler(async (req, res) => ok(res, await findConv(req.workspaceId, req.params.id))));
+/** Detail payload for the browser: no raw provider dump, no engine-internal history blob (it duplicates the transcript). */
+function present(conv: { toJSON(): unknown }) {
+  const o = conv.toJSON() as Record<string, unknown>;
+  delete o.raw;
+  const dyn = o.dynamicVariables as Record<string, unknown> | undefined;
+  if (dyn && "system__conversation_history" in dyn) {
+    const { system__conversation_history: _history, ...rest } = dyn;
+    o.dynamicVariables = rest;
+  }
+  return o;
+}
+
+router.get("/:id", asyncHandler(async (req, res) => ok(res, present(await findConv(req.workspaceId, req.params.id)))));
+router.get("/:id/profile", asyncHandler(async (req, res) => {
+  const conv = await findConv(req.workspaceId, req.params.id);
+  ok(res, await getConversationProfile(req.workspaceId, conv));
+}));
+router.post("/:id/lead", asyncHandler(async (req, res) => {
+  const body = z.object({ fullName: z.string().trim().min(1, "Name is required").max(120), company: z.string().trim().max(160).optional(), email: z.union([z.string().trim().email("Enter a valid email"), z.literal("")]).optional(), pushToZoho: z.boolean().optional() }).parse(req.body ?? {});
+  const conv = await findConv(req.workspaceId, req.params.id);
+  ok(res, await createLeadFromConversation(req.workspaceId, conv, { ...body, email: body.email || undefined }), 201);
+}));
 router.post("/:id/refresh", asyncHandler(async (req, res) => {
   const conv = await findConv(req.workspaceId, req.params.id);
-  ok(res, await refreshConversation(req.workspaceId, conv.elevenConversationId));
+  ok(res, present(await refreshConversation(req.workspaceId, conv.elevenConversationId)));
 }));
 router.post("/:id/analyze", asyncHandler(async (req, res) => {
   const conv = await findConv(req.workspaceId, req.params.id);
   const { force } = z.object({ force: z.boolean().optional() }).parse(req.body ?? {});
   await analyzeConversation(conv, { force });
-  ok(res, await findConv(req.workspaceId, req.params.id));
+  ok(res, present(await findConv(req.workspaceId, req.params.id)));
 }));
 router.get("/:id/audio", asyncHandler(async (req, res) => {
   const conv = await findConv(req.workspaceId, req.params.id);

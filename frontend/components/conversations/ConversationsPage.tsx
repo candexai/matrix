@@ -46,21 +46,28 @@ const STATUSES = [
   { value: "failed", label: "Failed" },
 ];
 
-const PAGE_HEIGHT = "h-[calc(100svh-72px)] min-h-[640px]";
+/**
+ * Mail-client layout: the page is exactly one viewport tall (minus the 72px sticky header) and only the
+ * list / open conversation scroll. The root must NOT be `flex-1`: inside the `min-h-svh` dashboard column
+ * `flex-basis: 0%` resolves to `content`, which makes the explicit height lose and the page grow with the list.
+ */
+const PAGE_ROOT = "flex h-[calc(100svh-72px)] min-h-[560px] min-w-0 flex-none flex-col";
+/** Conversation list column — slightly narrower once the profile rail appears (≥1280px). */
+const LIST_COLUMN = "w-[380px] xl:w-[340px]";
 
 export function ConversationsPageSkeleton() {
   return (
-    <div className={cn("flex flex-1 flex-col", PAGE_HEIGHT)}>
-      <PageHeader title="Conversations" description="View and reply across channels.">
+    <div className={PAGE_ROOT}>
+      <PageHeader title="Conversations" description="View and reply across channels." className="shrink-0">
         <Skeleton className="h-10 w-[560px] max-w-full rounded-lg" />
         <Skeleton className="h-9 w-full rounded-md" />
       </PageHeader>
       <div className="flex min-h-0 flex-1 px-7 pb-6">
-        <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
-          <aside className="w-[380px] shrink-0 border-r border-border">
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
+          <aside className={cn("min-h-0 shrink-0 overflow-hidden border-r border-border", LIST_COLUMN)}>
             <ListSkeleton />
           </aside>
-          <div className="flex-1" />
+          <div className="min-h-0 min-w-0 flex-1" />
         </div>
       </div>
     </div>
@@ -163,9 +170,9 @@ export function ConversationsPage() {
   );
 
   return (
-    <div className={cn("flex flex-1 flex-col", PAGE_HEIGHT)}>
+    <div className={PAGE_ROOT}>
       <InsightPaletteStyle />
-      <PageHeader title="Conversations" description="View and reply across channels." actions={syncButton}>
+      <PageHeader title="Conversations" description="View and reply across channels." actions={syncButton} className="shrink-0">
         <Segmented<Channel>
           value={channel}
           onChange={setChannel}
@@ -175,7 +182,7 @@ export function ConversationsPage() {
           })}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-72 max-w-full">
+          <div className="relative w-56 max-w-full">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, phone, summary or transcript" className="pl-8 pr-8" aria-label="Search conversations" />
             {search ? (
@@ -222,7 +229,7 @@ export function ConversationsPage() {
             </SelectContent>
           </Select>
           <Select value={tag ?? "any"} onValueChange={(v) => setParam("tag", v === "any" ? undefined : v)}>
-            <SelectTrigger className="w-[190px]" aria-label="Tag">
+            <SelectTrigger className="w-[170px]" aria-label="Tag">
               <SelectValue placeholder="Any tag" />
             </SelectTrigger>
             <SelectContent>
@@ -283,7 +290,7 @@ export function ConversationsPage() {
 
       <div className="flex min-h-0 flex-1 flex-col px-7 pb-6">
         {workspaceEmpty ? (
-          <div className="flex flex-1 items-center justify-center rounded-xl border border-border bg-card">
+          <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto rounded-xl border border-border bg-card">
             <EmptyState
               icon={Search}
               title="No conversations"
@@ -299,7 +306,7 @@ export function ConversationsPage() {
             />
           </div>
         ) : channelEmpty ? (
-          <div className="flex flex-1 items-center justify-center rounded-xl border border-border bg-card">
+          <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto rounded-xl border border-border bg-card">
             <EmptyState
               icon={channelMeta(channel).icon}
               title={`No ${channelMeta(channel).label} conversations yet`}
@@ -312,8 +319,8 @@ export function ConversationsPage() {
             />
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
-            <aside className="flex w-[380px] shrink-0 flex-col border-r border-border">
+          <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
+            <aside className={cn("flex min-h-0 shrink-0 flex-col border-r border-border", LIST_COLUMN)}>
               {elevenMissing && items.length === 0 ? (
                 <ElevenLabsRequired className="py-12" description="Conversations are pulled from your Candex account. Connect it in Integrations to load them here." />
               ) : (
@@ -336,11 +343,11 @@ export function ConversationsPage() {
                 />
               )}
             </aside>
-            <section className="flex min-w-0 flex-1 flex-col">
+            <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Conversation">
               {selectedId ? (
-                <ConversationDetail key={selectedId} id={selectedId} onDeleted={onDeleted} />
+                <ConversationDetail key={selectedId} id={selectedId} onDeleted={onDeleted} onSelectConversation={(id) => setParam("id", id)} />
               ) : (
-                <div className="flex flex-1 items-center justify-center">
+                <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto">
                   <EmptyState icon={MessageSquare} title="Select a conversation" description="Pick a call on the left to see its recording, transcript and collected data." />
                 </div>
               )}

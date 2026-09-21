@@ -95,3 +95,9 @@ pm2 monit                         # live CPU/memory
 | Zoho **Connect** shows "Invalid Redirect Uri" | The Zoho client in use does not have this site's callback registered. Easiest: on the Integrations page open **Zoho CRM → App settings**, create your own *Server-based Application* at https://api-console.zoho.in with the callback URL shown there, paste Client ID + Secret, save, then Connect. (Or register `https://edu.candexai.co.in/api/v1/integrations/zoho/callback` on the existing client.) |
 | Zoho "not connected" after deploy | `ENCRYPTION_KEY` differs from the one used when Zoho was connected, or the token was revoked — reconnect from Integrations (needs the site callback URL registered in the Zoho API console) |
 | Frontend shows "Cannot reach the backend" | `NEXT_PUBLIC_API_URL` in `frontend/.env.production` must be `https://edu.candexai.co.in/api/v1`; rebuild with `deploy.sh` |
+
+## Account admin (run on the server)
+
+- **Forgotten password** (passwords are stored as one-way hashes and cannot be read back): `cd /opt/matrix/backend && node dist/scripts/setPassword.js --email <email>` — asks for the new password twice without echoing it. Over SSH use `ssh -t` so a terminal is attached.
+- **Move an account to another workspace**: `node dist/scripts/assignWorkspace.js --email <email> --workspace <id|new>` (the user signs in again afterwards).
+- **Which upcoming integrations did workspaces ask for?** Clicking Connect on a not-yet-live integration records a request in `workspacesettings.integrationRequests` and logs a line: `pm2 logs matrix-backend --nostream --lines 2000 | grep "\[integrations\]"`.

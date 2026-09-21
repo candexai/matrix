@@ -67,7 +67,8 @@ export function AudioPlayer({ src, fallbackDuration }: { src: string; fallbackDu
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    // Container queries: next to the profile rail the column can be ~280px wide — the seek bar then gets its own row.
+    <div className="@container rounded-xl border border-border bg-card p-4">
       <audio
         ref={ref}
         src={src}
@@ -86,7 +87,7 @@ export function AudioPlayer({ src, fallbackDuration }: { src: string; fallbackDu
       <div className="mb-3 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         <AudioLines className="size-3.5 text-primary" /> Recording
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
         <button
           type="button"
           onClick={toggle}
@@ -96,14 +97,25 @@ export function AudioPlayer({ src, fallbackDuration }: { src: string; fallbackDu
         >
           {buffering ? <Loader2 className="size-4 animate-spin" /> : playing ? <Pause className="size-4" /> : <Play className="size-4 translate-x-px" />}
         </button>
-        <span className="w-11 text-right text-xs tabular-nums text-muted-foreground">{formatDuration(current)}</span>
-        <Slider value={[Math.min(current, total || current)]} max={total || 1} step={0.1} disabled={!total || Boolean(error)} onValueChange={([v]) => seek(v)} className="flex-1" aria-label="Seek" />
-        <span className="w-11 text-xs tabular-nums text-muted-foreground">{formatDuration(total)}</span>
-        <div className="flex items-center gap-2 border-l border-border pl-3">
+        <span className="text-right text-xs tabular-nums text-muted-foreground @sm:w-11">{formatDuration(current)}</span>
+        <span className="-mx-1.5 text-xs text-muted-foreground @sm:hidden" aria-hidden>
+          /
+        </span>
+        <Slider
+          value={[Math.min(current, total || current)]}
+          max={total || 1}
+          step={0.1}
+          disabled={!total || Boolean(error)}
+          onValueChange={([v]) => seek(v)}
+          className="order-last flex-none @sm:order-none @sm:w-auto @sm:flex-1"
+          aria-label="Seek"
+        />
+        <span className="text-xs tabular-nums text-muted-foreground @sm:w-11">{formatDuration(total)}</span>
+        <div className="ml-auto flex items-center gap-2 @sm:ml-0 @sm:border-l @sm:border-border @sm:pl-3">
           <button type="button" onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"} className="text-muted-foreground transition-colors hover:text-foreground">
             {muted || volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
           </button>
-          <Slider value={[muted ? 0 : volume]} max={1} step={0.05} onValueChange={([v]) => changeVolume(v)} className="w-20" aria-label="Volume" />
+          <Slider value={[muted ? 0 : volume]} max={1} step={0.05} onValueChange={([v]) => changeVolume(v)} className="hidden w-20 @sm:flex" aria-label="Volume" />
         </div>
       </div>
       {error ? (

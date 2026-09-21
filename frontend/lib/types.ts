@@ -440,6 +440,103 @@ export interface ConversationListResponse extends Paginated<Conversation> {
   channelCounts: Record<string, number>;
 }
 
+// ---------- conversation profile (who is on the call + the relationship so far) ----------
+/** A CRM field reference: Zoho api name + its human label. */
+export interface ConversationProfileCrmField {
+  apiName: string;
+  label: string;
+}
+export interface ConversationProfileLead {
+  _id: string;
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  leadStatus?: string;
+  leadSource?: string;
+  rating?: string;
+  industry?: string;
+  website?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  description?: string;
+  source: "zoho" | "manual" | "csv";
+  zohoId?: string;
+  tags: string[];
+  listNames: string[];
+  createdAt: string;
+  syncedAt?: string;
+  /** Other non-empty CRM fields, already formatted for display. */
+  fields: (ConversationProfileCrmField & { value: string })[];
+  /** CRM fields that are still empty — what the agent can still collect. */
+  emptyFieldCount: number;
+}
+export interface ConversationProfileStats {
+  totalCalls: number;
+  connectedCalls: number;
+  totalTalkSecs: number;
+  firstCallAt: string | null;
+  lastCallAt: string | null;
+  successCount: number;
+  failedCount: number;
+}
+/** A detail learned during a call (collected by the agent or extracted by AI), newest first, de-duplicated by key. */
+export interface ConversationProfileCaptured {
+  key: string;
+  label: string;
+  value: string;
+  source: "agent" | "ai";
+  conversationId: string;
+  at: string | null;
+  thisCall: boolean;
+}
+export interface ConversationProfileHistoryItem {
+  _id: string;
+  startedAt: string | null;
+  durationSecs: number;
+  status: string;
+  callSuccessful?: string;
+  title?: string;
+  agentName?: string;
+  direction?: string;
+  sentiment?: "positive" | "neutral" | "negative";
+  current: boolean;
+}
+export interface ConversationProfile {
+  conversationId: string;
+  /** linked lead | phone caller with no lead | web/test call without a phone */
+  kind: "lead" | "caller" | "web";
+  /** Lead name, else a name captured during a call, else the formatted phone, else "Web call". */
+  displayName: string;
+  /** E.164 */
+  phone: string | null;
+  lead: ConversationProfileLead | null;
+  stats: ConversationProfileStats;
+  captured: ConversationProfileCaptured[];
+  /** CRM fields THIS call wrote back. */
+  updatedCrmFields: ConversationProfileCrmField[];
+  /** Newest first, max 12, includes the current call. */
+  history: ConversationProfileHistoryItem[];
+  suggestedLead: { fullName?: string; email?: string; company?: string };
+}
+export interface CreateLeadFromConversationInput {
+  fullName: string;
+  company?: string;
+  email?: string;
+  pushToZoho?: boolean;
+}
+export interface CreateLeadFromConversationResult {
+  profile: ConversationProfile;
+  linkedConversations: number;
+  /** false when an existing lead with the same phone was found and linked instead. */
+  created: boolean;
+}
+
 export interface ZohoFieldMeta {
   api_name: string;
   field_label: string;

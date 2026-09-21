@@ -1,7 +1,7 @@
 "use client";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { api, API_URL, errorMessage } from "@/lib/api";
+import { api, API_URL, errorCode, errorMessage } from "@/lib/api";
 import type {
   AuthUser,
   Me,
@@ -18,6 +18,9 @@ import type {
   Catalog,
   Conversation,
   ConversationListResponse,
+  ConversationProfile,
+  CreateLeadFromConversationInput,
+  CreateLeadFromConversationResult,
   ElevenLabsStatus,
   InsightTag,
   InsightsDashboard,
@@ -484,6 +487,29 @@ export interface ConversationFilters {
 export const useConversations = (filters: ConversationFilters) =>
   useQuery({ queryKey: ["conversations", filters], queryFn: () => api.get<ConversationListResponse>("/conversations", filters as Record<string, unknown>), placeholderData: (prev) => prev, refetchInterval: 10_000, refetchOnWindowFocus: true });
 export const useConversation = (id?: string) => useQuery({ queryKey: ["conversations", "one", id], queryFn: () => api.get<Conversation>(`/conversations/${id}`), enabled: Boolean(id) });
+/** Who is on this call + the relationship so far (lead or unknown caller, stats, captured details, call history). */
+export const useConversationProfile = (id?: string) => useQuery({ queryKey: ["conversations", "profile", id], queryFn: () => api.get<ConversationProfile>(`/conversations/${id}/profile`), enabled: Boolean(id) });
+/** Save the caller of a conversation as a lead (or link an existing lead with the same phone) and link their calls. */
+export function useCreateLeadFromConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: CreateLeadFromConversationInput & { id: string }) => api.post<CreateLeadFromConversationResult>(`/conversations/${id}/lead`, input),
+    onSuccess: (r, { id }) => {
+      qc.setQueryData(["conversations", "profile", id], r.profile);
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      const n = r.linkedConversations;
+      const calls = `linked ${n} call${n === 1 ? "" : "s"}`;
+      toast.success(r.created ? `Saved to My Leads · ${calls}` : `Linked to existing lead ${r.profile.lead?.fullName || r.profile.displayName} · ${calls}`);
+    },
+    // Validation errors are shown inline by SaveAsLeadDialog. A call that got linked meanwhile just needs fresh data.
+    onError: (e) => {
+      if (errorCode(e) !== "ALREADY_LINKED") return;
+      qc.invalidateQueries({ queryKey: ["conversations"] });
+      toast.info("This call is already linked to a lead");
+    },
+  });
+}
 export function useSyncConversations() {
   const qc = useQueryClient();
   return useMutation({

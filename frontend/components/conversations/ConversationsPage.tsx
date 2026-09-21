@@ -57,11 +57,11 @@ const LIST_COLUMN = "w-[380px]";
 export function ConversationsPageSkeleton() {
   return (
     <div className={PAGE_ROOT}>
-      <PageHeader title="Conversations" description="View and reply across channels." className="shrink-0">
+      <PageHeader title="Conversations" className="shrink-0 gap-3 pt-4 pb-3">
         <Skeleton className="h-10 w-[560px] max-w-full rounded-lg" />
         <Skeleton className="h-9 w-full rounded-md" />
       </PageHeader>
-      <div className="flex min-h-0 flex-1 px-7 pb-6">
+      <div className="flex min-h-0 flex-1 px-7 pb-4">
         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
           <aside className={cn("min-h-0 shrink-0 overflow-hidden border-r border-border", LIST_COLUMN)}>
             <ListSkeleton />
@@ -171,7 +171,7 @@ export function ConversationsPage() {
   return (
     <div className={PAGE_ROOT}>
       <InsightPaletteStyle />
-      <PageHeader title="Conversations" description="View and reply across channels." actions={syncButton} className="shrink-0">
+      <PageHeader title="Conversations" actions={<Segmented<Range> value={range} onChange={setRange} options={RANGE_OPTIONS} />} className="shrink-0 gap-3 pt-4 pb-3">
         <Segmented<Channel>
           value={channel}
           onChange={setChannel}
@@ -281,13 +281,10 @@ export function ConversationsPage() {
               </button>
             </span>
           ) : null}
-          <div className="ml-auto">
-            <Segmented<Range> value={range} onChange={setRange} options={RANGE_OPTIONS} />
-          </div>
         </div>
       </PageHeader>
 
-      <div className="flex min-h-0 flex-1 flex-col px-7 pb-6">
+      <div className="flex min-h-0 flex-1 flex-col px-7 pb-4">
         {workspaceEmpty ? (
           <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto rounded-xl border border-border bg-card">
             <EmptyState
@@ -344,7 +341,7 @@ export function ConversationsPage() {
             </aside>
             <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Conversation">
               {selectedId ? (
-                <ConversationDetail key={selectedId} id={selectedId} onDeleted={onDeleted} />
+                <ConversationDetail key={selectedId} id={selectedId} onDeleted={onDeleted} onSelectConversation={(id) => setParam("id", id)} />
               ) : (
                 <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto">
                   <EmptyState icon={MessageSquare} title="Select a conversation" description="Pick a call on the left to see its recording, transcript and collected data." />

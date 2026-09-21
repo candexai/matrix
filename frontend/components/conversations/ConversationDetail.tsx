@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Bot, CircleAlert, Copy, ExternalLink, FileText, MicOff, MoreHorizontal, PhoneCall, PhoneIncoming, PhoneOutgoing, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { Bot, CircleAlert, Copy, ExternalLink, FileText, History, MicOff, MoreHorizontal, PhoneCall, PhoneIncoming, PhoneOutgoing, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import { cn, formatDateTime, formatDuration } from "@/lib/utils";
 import { AudioPlayer } from "./AudioPlayer";
 import { Avatar } from "./ConversationList";
 import { DetailsPanel } from "./DetailsPanel";
+import { LeadProfilePanel } from "./LeadProfilePanel";
 import { SummaryPanel } from "./SummaryPanel";
 import { Transcript } from "./Transcript";
 import { copyText, displayName, isLive, outcomeMeta, statusMeta } from "./helpers";
@@ -58,7 +59,7 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export function ConversationDetail({ id, onDeleted }: { id: string; onDeleted: (id: string) => void }) {
+export function ConversationDetail({ id, onDeleted, onSelectConversation }: { id: string; onDeleted: (id: string) => void; onSelectConversation: (id: string) => void }) {
   const qc = useQueryClient();
   const { data: c, isLoading, isError, error, refetch } = useConversation(id);
   const refresh = useRefreshConversation();
@@ -183,6 +184,9 @@ export function ConversationDetail({ id, onDeleted }: { id: string; onDeleted: (
               </TabsTrigger>
               <TabsTrigger value="summary">Summary & data</TabsTrigger>
               <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="history">
+                <History /> Call history
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="transcript">
               <Transcript turns={c.transcript ?? []} agentLabel={c.agentName || "Agent"} />
@@ -192,6 +196,9 @@ export function ConversationDetail({ id, onDeleted }: { id: string; onDeleted: (
             </TabsContent>
             <TabsContent value="details">
               <DetailsPanel c={c} />
+            </TabsContent>
+            <TabsContent value="history">
+              <LeadProfilePanel conversationId={c._id} onSelectConversation={onSelectConversation} />
             </TabsContent>
           </Tabs>
         </div>

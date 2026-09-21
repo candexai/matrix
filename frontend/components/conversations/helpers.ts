@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { BadgeProps } from "@/components/ui/badge";
-import type { Conversation, ConversationProfile } from "@/lib/types";
+import type { Conversation } from "@/lib/types";
 import { titleCase } from "@/lib/utils";
 
 export type BadgeVariant = NonNullable<BadgeProps["variant"]>;
@@ -36,26 +36,6 @@ export function formatPhone(phone?: string | null): string {
   const compact = phone.replace(/[\s\-().]/g, "");
   const m = /^\+91(\d{5})(\d{5})$/.exec(compact);
   return m ? `+91 ${m[1]} ${m[2]}` : phone.trim();
-}
-
-/** True when a display string is really a phone number (so it gets a phone icon / phone formatting instead of initials). */
-export function isPhoneLike(value?: string | null): boolean {
-  const v = (value ?? "").trim();
-  return v.length >= 5 && /^\+?[\d\s\-().]+$/.test(v);
-}
-
-const GENERIC_DISPLAY_NAMES = new Set(["web call", "unknown caller", "unknown"]);
-/** True when the profile's display name is a person's name (a lead, or a name captured in a call) — not a phone number or a generic fallback. */
-export function profileHasName(p: Pick<ConversationProfile, "kind" | "displayName">): boolean {
-  const name = p.displayName.trim();
-  if (!name) return false;
-  if (p.kind === "lead") return !isPhoneLike(name);
-  return !isPhoneLike(name) && !GENERIC_DISPLAY_NAMES.has(name.toLowerCase());
-}
-
-/** A name or a phone number, formatted for a heading. */
-export function formatDisplayName(value: string): string {
-  return isPhoneLike(value) ? formatPhone(value) : value;
 }
 
 export const isLive = (status?: Conversation["status"]) => status === "in_progress" || status === "initiated";

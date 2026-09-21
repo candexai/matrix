@@ -52,8 +52,7 @@ const STATUSES = [
  * `flex-basis: 0%` resolves to `content`, which makes the explicit height lose and the page grow with the list.
  */
 const PAGE_ROOT = "flex h-[calc(100svh-72px)] min-h-[560px] min-w-0 flex-none flex-col";
-/** Conversation list column — slightly narrower once the profile rail appears (≥1280px). */
-const LIST_COLUMN = "w-[380px] xl:w-[340px]";
+const LIST_COLUMN = "w-[380px]";
 
 export function ConversationsPageSkeleton() {
   return (
@@ -182,7 +181,7 @@ export function ConversationsPage() {
           })}
         />
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-56 max-w-full">
+          <div className="relative w-72 max-w-full">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, phone, summary or transcript" className="pl-8 pr-8" aria-label="Search conversations" />
             {search ? (
@@ -229,7 +228,7 @@ export function ConversationsPage() {
             </SelectContent>
           </Select>
           <Select value={tag ?? "any"} onValueChange={(v) => setParam("tag", v === "any" ? undefined : v)}>
-            <SelectTrigger className="w-[170px]" aria-label="Tag">
+            <SelectTrigger className="w-[190px]" aria-label="Tag">
               <SelectValue placeholder="Any tag" />
             </SelectTrigger>
             <SelectContent>
@@ -345,7 +344,7 @@ export function ConversationsPage() {
             </aside>
             <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label="Conversation">
               {selectedId ? (
-                <ConversationDetail key={selectedId} id={selectedId} onDeleted={onDeleted} onSelectConversation={(id) => setParam("id", id)} />
+                <ConversationDetail key={selectedId} id={selectedId} onDeleted={onDeleted} />
               ) : (
                 <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto">
                   <EmptyState icon={MessageSquare} title="Select a conversation" description="Pick a call on the left to see its recording, transcript and collected data." />

@@ -67,11 +67,6 @@ export function errorMessage(err: unknown): string {
   return e?.message || "Something went wrong";
 }
 
-/** Machine-readable API error code (e.g. "ALREADY_LINKED"), when the failure came from the backend. */
-export function errorCode(err: unknown): string | undefined {
-  return (err as ApiError | null | undefined)?.code;
-}
-
 /** Absolute URL for streaming endpoints (audio). */
 export function apiUrl(path: string): string {
   return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;

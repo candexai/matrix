@@ -133,19 +133,19 @@ function PhoneCallStatus({ result, agent, onReset }: { result: TestCallResult; a
           {c?.summaryTitle ? <Row label="Title" value={c.summaryTitle} /> : null}
         </dl>
 
-        {!convId ? <Notice tone="warning">ElevenLabs accepted the call but didn't return a conversation id{result.message ? ` (${result.message})` : ""}. It should show up in Conversations within a minute.</Notice> : null}
+        {!convId ? <Notice tone="warning">Candex accepted the call but didn't return a conversation id{result.message ? ` (${result.message})` : ""}. It should show up in Conversations within a minute.</Notice> : null}
 
         {live ? (
           <p className="text-xs text-muted-foreground">
-            {status === "initiated" ? "Ringing your phone — pick up to talk to the agent. This card refreshes every 5 seconds." : status === "in_progress" ? "Call in progress. The transcript and summary arrive once you hang up." : "Call ended — ElevenLabs is generating the transcript and summary."}
+            {status === "initiated" ? "Ringing your phone — pick up to talk to the agent. This card refreshes every 5 seconds." : status === "in_progress" ? "Call in progress. The transcript and summary arrive once you hang up." : "Call ended — Candex is generating the transcript and summary."}
           </p>
         ) : null}
-        {live && elapsed > 45 ? <Notice>Still {meta.label.toLowerCase()}? If this agent's post-call webhook is off, ElevenLabs won't push the result — use “Refresh from ElevenLabs” after you hang up.</Notice> : null}
+        {live && elapsed > 45 ? <Notice>Still {meta.label.toLowerCase()}? If this agent's post-call webhook is off, Candex won't push the result — use “Refresh from Candex” after you hang up.</Notice> : null}
         {conv.isError ? <Notice tone="warning">{errorMessage(conv.error)}</Notice> : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => (convId ? refresh.mutate(convId) : undefined)} loading={refresh.isPending} disabled={!convId}>
-            {!refresh.isPending ? <RefreshCw /> : null} Refresh from ElevenLabs
+            {!refresh.isPending ? <RefreshCw /> : null} Refresh from Candex
           </Button>
           {convId ? (
             <Link href={`/conversations?id=${encodeURIComponent(convId)}`} className={buttonVariants({ variant: "soft", size: "sm" })}>
@@ -162,7 +162,7 @@ function PhoneCallStatus({ result, agent, onReset }: { result: TestCallResult; a
         <div className="space-y-6 border-t border-border px-5 py-5">
           <section>
             <SectionTitle>Summary</SectionTitle>
-            {c.summary ? <p className="text-[14px] leading-relaxed text-foreground/90">{c.summary}</p> : <p className="text-sm italic text-muted-foreground">No summary yet — ElevenLabs generates it shortly after the call ends. Refresh in a moment.</p>}
+            {c.summary ? <p className="text-[14px] leading-relaxed text-foreground/90">{c.summary}</p> : <p className="text-sm italic text-muted-foreground">No summary yet — Candex generates it shortly after the call ends. Refresh in a moment.</p>}
           </section>
           {data.length ? (
             <section>
@@ -277,7 +277,7 @@ export function PhoneCallPanel({ agent, dynamicVariables, className }: { agent?:
             </Notice>
           ) : !outbound.length ? (
             <Notice tone="warning">
-              No outbound-capable number in your ElevenLabs workspace yet.{" "}
+              No outbound-capable number in your Candex workspace yet.{" "}
               <Link href="/phone-numbers" className="font-medium text-primary hover:underline">
                 Add a number in Phone Numbers
               </Link>{" "}
@@ -326,7 +326,7 @@ export function PhoneCallPanel({ agent, dynamicVariables, className }: { agent?:
                 </Button>
                 <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                   <Info className="mt-0.5 size-3.5 shrink-0" />
-                  Free ElevenLabs plans have limited call minutes; test calls count against your balance.
+                  Free Candex plans have limited call minutes; test calls count against your balance.
                 </p>
               </div>
             </>

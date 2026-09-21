@@ -14,10 +14,10 @@ export function isElevenNotConfigured(err: unknown): boolean {
   return (err as ApiError | null | undefined)?.code === ELEVENLABS_NOT_CONFIGURED;
 }
 
-const DEFAULT_DESCRIPTION = "This workspace has no ElevenLabs API key yet. Voice agents, phone numbers, voices and calls all run through your own ElevenLabs account.";
+const DEFAULT_DESCRIPTION = "This workspace has no Candex API key yet. Voice agents, phone numbers, voices and calls all run through your own Candex account.";
 
 /** Full-page empty state for list pages whose main query failed with ELEVENLABS_NOT_CONFIGURED. */
-export function ElevenLabsRequired({ title = "Connect ElevenLabs to continue", description = DEFAULT_DESCRIPTION, className }: { title?: string; description?: string; className?: string }) {
+export function ElevenLabsRequired({ title = "Connect Candex to continue", description = DEFAULT_DESCRIPTION, className }: { title?: string; description?: string; className?: string }) {
   return (
     <EmptyState
       icon={AudioLines}
@@ -26,7 +26,7 @@ export function ElevenLabsRequired({ title = "Connect ElevenLabs to continue", d
       className={className}
       action={
         <Link href="/integrations" className={buttonVariants()}>
-          <Plug /> Connect ElevenLabs
+          <Plug /> Connect Candex
         </Link>
       }
     />
@@ -40,7 +40,7 @@ export function ElevenLabsRequiredNotice({ children = "in Integrations to load y
       <Plug className="mt-0.5 size-4 shrink-0 text-primary" />
       <span>
         <Link href="/integrations" className="font-medium text-primary hover:underline">
-          Connect ElevenLabs
+          Connect Candex
         </Link>{" "}
         {children}
       </span>

@@ -33,7 +33,7 @@ export interface ElevenStatus {
 }
 
 export function notConfiguredError(): HttpError {
-  return new HttpError(409, "Connect your ElevenLabs account in Integrations → ElevenLabs", ELEVENLABS_NOT_CONFIGURED);
+  return new HttpError(409, "Connect your Candex account in Integrations → Candex", ELEVENLABS_NOT_CONFIGURED);
 }
 
 /** True for the error thrown when a workspace has no ElevenLabs credentials (so loops can skip it silently). */
@@ -164,7 +164,7 @@ export async function elevenStatus(workspaceId: string, opts: { probe?: boolean 
  */
 export async function connectEleven(workspaceId: string, input: { apiKey: string; region?: ElevenRegion }): Promise<ElevenStatus> {
   const apiKey = (input.apiKey ?? "").trim();
-  if (apiKey.length < 10) throw new HttpError(400, "Paste a valid ElevenLabs API key", ELEVENLABS_INVALID_KEY);
+  if (apiKey.length < 10) throw new HttpError(400, "Paste a valid Candex API key", ELEVENLABS_INVALID_KEY);
   const region: ElevenRegion = input.region === "eu" ? "eu" : "us";
   const baseUrl = ELEVEN_BASE_URLS[region];
   const candidate = new ElevenLabsClient({ apiKey, baseUrl, source: "workspace" });
@@ -176,9 +176,9 @@ export async function connectEleven(workspaceId: string, input: { apiKey: string
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status;
     if (status === 401 || status === 403) {
-      throw new HttpError(400, `ElevenLabs rejected this API key for the ${region.toUpperCase()} region. Check the key (Profile → API keys) and that the region matches your account (EU data residency keys only work with region "eu").`, ELEVENLABS_INVALID_KEY);
+      throw new HttpError(400, `Candex rejected this API key for the ${region.toUpperCase()} region. Check the key and that the region matches your account (EU data residency keys only work with region "eu").`, ELEVENLABS_INVALID_KEY);
     }
-    throw new HttpError(400, `Could not verify the key with ElevenLabs (${baseUrl}): ${upstreamMessage(err)}`, ELEVENLABS_INVALID_KEY);
+    throw new HttpError(400, `Could not verify the key with Candex (${region.toUpperCase()} region): ${upstreamMessage(err)}`, ELEVENLABS_INVALID_KEY);
   }
 
   const previous = await resolveCredentials(workspaceId);

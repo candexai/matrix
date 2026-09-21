@@ -22,15 +22,19 @@ interface Errors {
   inbound: TrunkErrors;
 }
 
+/** Branded inbound SIP host (e.g. a CNAME you own). Left empty, the UI asks the user to get it from Candex support. */
+const SIP_INBOUND_HOST = process.env.NEXT_PUBLIC_SIP_INBOUND_HOST?.trim() || "";
+
 export function SipHowItWorks() {
   return (
-    <InfoBox icon={Network} title="How SIP trunking works with ElevenLabs">
+    <InfoBox icon={Network} title="How SIP trunking works with Candex">
       <ul className="list-disc space-y-1 pl-4">
         <li>
-          <span className="font-medium text-foreground">Inbound</span> — point your carrier or PBX at ElevenLabs' SIP endpoint <code className="rounded bg-muted px-1 font-mono text-[11.5px] text-foreground">sip.rtc.elevenlabs.io</code> (TLS 5061, or UDP/TCP 5060) and send the E.164 number in the To header.
+          <span className="font-medium text-foreground">Inbound</span> — point your carrier or PBX at the Candex SIP endpoint{" "}
+          {SIP_INBOUND_HOST ? <code className="rounded bg-muted px-1 font-mono text-[11.5px] text-foreground">{SIP_INBOUND_HOST}</code> : <span>(your Candex account manager shares the address)</span>} (TLS 5061, or UDP/TCP 5060) and send the E.164 number in the To header.
         </li>
         <li>
-          <span className="font-medium text-foreground">Outbound</span> — ElevenLabs sends INVITEs to your provider's termination URI (the address below), authenticating with the trunk credentials if your provider requires them.
+          <span className="font-medium text-foreground">Outbound</span> — Candex sends INVITEs to your provider's termination URI (the address below), authenticating with the trunk credentials if your provider requires them.
         </li>
         <li>Numbers must be in E.164 format: a plus sign, country code and digits only.</li>
       </ul>
@@ -99,7 +103,7 @@ export function ConnectSipDialog({ open, onOpenChange, agents, agentsLoading }: 
       <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>Connect SIP trunk</DialogTitle>
-          <DialogDescription>Bring your own carrier or PBX. ElevenLabs registers the number and routes calls over SIP.</DialogDescription>
+          <DialogDescription>Bring your own carrier or PBX. Candex registers the number and routes calls over SIP.</DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-5">
           <SipHowItWorks />
@@ -123,7 +127,7 @@ export function ConnectSipDialog({ open, onOpenChange, agents, agentsLoading }: 
             {submitted && errors.caps ? <p className="text-xs text-destructive">{errors.caps}</p> : null}
           </div>
 
-          <TrunkSection icon={ArrowUpFromLine} title="Outbound trunk" description="Where ElevenLabs sends the calls your agents place.">
+          <TrunkSection icon={ArrowUpFromLine} title="Outbound trunk" description="Where Candex sends the calls your agents place.">
             <OutboundTrunkFields value={outbound} onChange={setOutbound} errors={submitted ? errors.outbound : undefined} requireAddress={supportsOutbound} />
           </TrunkSection>
 

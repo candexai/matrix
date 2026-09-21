@@ -50,7 +50,7 @@ function Turn({ turn, agentLabel }: { turn: TranscriptTurn; agentLabel: string }
 
 export function Transcript({ turns, agentLabel = "Agent" }: { turns: TranscriptTurn[]; agentLabel?: string }) {
   if (!turns?.length) {
-    return <EmptyState icon={FileText} title="Transcript not available yet" description="Transcripts arrive once the call ends and ElevenLabs finishes processing. Use “Refresh from ElevenLabs” if it has been a while." className="py-10" />;
+    return <EmptyState icon={FileText} title="Transcript not available yet" description="Transcripts arrive once the call ends and Candex finishes processing. Use “Refresh from Candex” if it has been a while." className="py-10" />;
   }
   return (
     <ol className="space-y-4">

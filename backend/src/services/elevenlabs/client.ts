@@ -154,7 +154,7 @@ export class ElevenLabsClient {
   }
 
   private assertConfigured() {
-    if (!this.configured) throw new HttpError(409, "Connect your ElevenLabs account in Integrations → ElevenLabs", "ELEVENLABS_NOT_CONFIGURED");
+    if (!this.configured) throw new HttpError(409, "Connect your Candex account in Integrations → Candex", "ELEVENLABS_NOT_CONFIGURED");
   }
 
   // ---------- Agents ----------

@@ -140,7 +140,7 @@ export function PreviewCallDialog({ agent, open, onOpenChange }: { agent: Agent 
           const c = await api.get<{ _id: string; status: string; transcript?: unknown[] }>(`/conversations/${conversationId}`).catch(() => null);
           if (c) setSyncedId(c._id);
           const complete = Boolean(c && c.status === "done" && (c.transcript?.length ?? 0) > 0);
-          if (!opts.quiet) toast.success(complete ? "Conversation saved" : "Call is still processing on ElevenLabs — try again in a moment");
+          if (!opts.quiet) toast.success(complete ? "Conversation saved" : "Call is still processing on Candex — try again in a moment");
           return complete;
         }
         if (!opts.quiet) toast.success("Conversations synced");
@@ -260,7 +260,7 @@ export function PreviewCallDialog({ agent, open, onOpenChange }: { agent: Agent 
           {status === "ended" ? (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
               <span className="text-muted-foreground">
-                {autoSaved ? "Saved to Conversations with transcript and analysis." : syncing ? "Saving the call to Conversations…" : "Waiting for ElevenLabs to finish processing the call…"}
+                {autoSaved ? "Saved to Conversations with transcript and analysis." : syncing ? "Saving the call to Conversations…" : "Waiting for Candex to finish processing the call…"}
               </span>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => void syncNow()} loading={syncing}>

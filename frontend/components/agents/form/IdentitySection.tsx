@@ -33,7 +33,7 @@ export function IdentitySection({
       </Grid2>
 
       <Field label="First message" htmlFor="first-message" error={errors.first_message} help="Leave empty to let the caller speak first. Variables are filled per lead automatically.">
-        <Textarea id="first-message" rows={3} value={cfg.first_message} onChange={(e) => set("first_message", e.target.value)} placeholder="Hi {{name}}, this is {{agent_name}} calling from Matrix. Do you have a quick moment?" />
+        <Textarea id="first-message" rows={3} value={cfg.first_message} onChange={(e) => set("first_message", e.target.value)} placeholder="Hi {{name}}, this is {{agent_name}} calling from Pilot. Do you have a quick moment?" />
       </Field>
 
       <div className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3">
@@ -51,7 +51,7 @@ export function IdentitySection({
           </Chip>
         </div>
         <p className="mt-2 text-xs leading-5 text-muted-foreground">
-          When a lead is called, Matrix passes <code className="rounded bg-muted px-1">name</code>, <code className="rounded bg-muted px-1">first_name</code>, <code className="rounded bg-muted px-1">company</code>, <code className="rounded bg-muted px-1">agent_name</code>,{" "}
+          When a lead is called, Pilot passes <code className="rounded bg-muted px-1">name</code>, <code className="rounded bg-muted px-1">first_name</code>, <code className="rounded bg-muted px-1">company</code>, <code className="rounded bg-muted px-1">agent_name</code>,{" "}
           <code className="rounded bg-muted px-1">lead_status</code> and every Zoho field as <code className="rounded bg-muted px-1">zoho_&lt;api_name&gt;</code>. They work in the first message and the system prompt.
         </p>
       </div>

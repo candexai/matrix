@@ -34,7 +34,7 @@ router.post("/logout", (req, res) => {
 router.get("/me", requireAuth, asyncHandler(async (req, res) => {
   const [user, settings] = await Promise.all([User.findById(req.user!.sub), WorkspaceSettings.findOne({ workspaceId: req.user!.ws })]);
   if (!user) return res.status(401).json({ success: false, error: { code: "UNAUTHENTICATED", message: "Session is no longer valid" } });
-  ok(res, { user: auth.publicUser(user), workspace: { id: user.workspaceId, name: settings?.name ?? "Matrix" } });
+  ok(res, { user: auth.publicUser(user), workspace: { id: user.workspaceId, name: settings?.name ?? "Pilot" } });
 }));
 
 router.post("/change-password", requireAuth, asyncHandler(async (req, res) => {

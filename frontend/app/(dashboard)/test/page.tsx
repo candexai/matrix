@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AudioWaveform, Braces, Cpu, Headphones, Info, Languages, MessageSquare, MicVocal, Pencil, PhoneOutgoing, Plus, TriangleAlert } from "lucide-react";
 import { useAgents, useCatalog, useVoices } from "@/hooks/api";
 import { errorMessage } from "@/lib/api";
-import { optionLabel, voiceName } from "@/components/agents/agent-utils";
+import { optionLabel, ttsModelLabel, voiceName } from "@/components/agents/agent-utils";
 import { KeyValueEditor } from "@/components/agents/form/primitives";
 import { ElevenLabsRequired, isElevenNotConfigured } from "@/components/integrations/ElevenLabsRequired";
 import { CallPanel } from "@/components/test/CallPanel";
@@ -122,7 +122,7 @@ function TestPageInner() {
           </div>
         ) : agents.isError ? (
           isElevenNotConfigured(agents.error) ? (
-            <ElevenLabsRequired description="Test calls ring through your own ElevenLabs account. Connect it in Integrations, create an agent, then come back here to talk to it." />
+            <ElevenLabsRequired description="Test calls ring through your own Candex account. Connect it in Integrations, create an agent, then come back here to talk to it." />
           ) : (
             <EmptyState
               icon={TriangleAlert}
@@ -179,7 +179,7 @@ function TestPageInner() {
                     <SummaryRow icon={MicVocal} label="Voice" value={voiceName(voices.data, cfg.voice_id)} />
                     <SummaryRow icon={Languages} label="Language" value={`${optionLabel(catalog.data?.languages, cfg.language, cfg.language)}${cfg.additional_languages?.length ? ` +${cfg.additional_languages.length}` : ""}`} />
                     <SummaryRow icon={Cpu} label="LLM" value={optionLabel(catalog.data?.llmModels, cfg.llm, cfg.llm)} />
-                    <SummaryRow icon={AudioWaveform} label="TTS model" value={optionLabel(catalog.data?.ttsModels, cfg.tts_model_id, cfg.tts_model_id)} />
+                    <SummaryRow icon={AudioWaveform} label="TTS model" value={ttsModelLabel(catalog.data?.ttsModels, cfg.tts_model_id)} />
                     <div className="flex items-start gap-2.5 py-2">
                       <MessageSquare className="mt-0.5 size-4 shrink-0 text-muted-foreground" strokeWidth={1.7} />
                       <div className="min-w-0 flex-1">
@@ -203,7 +203,7 @@ function TestPageInner() {
                 <div className="mb-1 flex items-center gap-1.5 text-sm font-medium">
                   <Braces className="size-4 text-primary" /> Dynamic variables
                 </div>
-                <p className="mb-3 text-xs text-muted-foreground">Pre-filled from the agent's placeholders. On real calls Matrix fills these from the lead record.</p>
+                <p className="mb-3 text-xs text-muted-foreground">Pre-filled from the agent's placeholders. On real calls Pilot fills these from the lead record.</p>
                 <KeyValueEditor value={vars} onChange={setVars} keyPlaceholder="name" valuePlaceholder="Priya" addLabel="Add variable" disabled={inCall} emptyText="No variables — the agent's placeholder defaults will be used." />
               </div>
 
@@ -212,7 +212,7 @@ function TestPageInner() {
                   <Headphones className="mt-0.5 size-4 shrink-0 text-primary" />
                   <div>
                     <div className="font-medium text-foreground">Microphone & audio</div>
-                    <p className="mt-0.5 leading-5">Your browser will ask for microphone access when you start. Use headphones to avoid the agent hearing itself. Test calls count towards your ElevenLabs usage like any other conversation.</p>
+                    <p className="mt-0.5 leading-5">Your browser will ask for microphone access when you start. Use headphones to avoid the agent hearing itself. Test calls count towards your Candex usage like any other conversation.</p>
                   </div>
                 </div>
               ) : (
@@ -228,7 +228,7 @@ function TestPageInner() {
               {cfg && !cfg.post_call_webhook_enabled ? (
                 <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
                   <Info className="mt-0.5 size-4 shrink-0" />
-                  <p className="leading-5">This agent's post-call webhook is off — use {mode === "browser" ? "“Sync conversation now”" : "“Refresh from ElevenLabs”"} after the call to pull the transcript into Matrix.</p>
+                  <p className="leading-5">This agent's post-call webhook is off — use {mode === "browser" ? "“Sync conversation now”" : "“Refresh from Candex”"} after the call to pull the transcript into Pilot.</p>
                 </div>
               ) : null}
             </div>

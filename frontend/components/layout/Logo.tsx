@@ -2,13 +2,13 @@ import Image from "next/image";
 import { APP_NAME, APP_PARTNER, CANDEX_LOGO_SRC } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
-/** "Matrix × CandexAI" lockup. */
+/** "Pilot × CandexAI" lockup. */
 export function Logo({ compact = false, className }: { compact?: boolean; className?: string }) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <div className="relative flex size-9 shrink-0 items-center justify-center rounded-lg brand-gradient text-white shadow-sm">
         <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 19V5l8 8 8-8v14" />
+          <path d="M8 20V4h5.5a4.75 4.75 0 0 1 0 9.5H8" />
         </svg>
       </div>
       {!compact ? (

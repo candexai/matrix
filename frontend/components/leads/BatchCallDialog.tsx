@@ -68,7 +68,7 @@ export function BatchCallDialog({
             Call {leadIds.length} selected lead{leadIds.length === 1 ? "" : "s"}
           </DialogTitle>
           <DialogDescription>
-            Submits an ElevenLabs batch call{listName ? ` from “${listName}”` : ""}. Leads without a phone number are skipped.
+            Submits a Candex batch call{listName ? ` from “${listName}”` : ""}. Leads without a phone number are skipped.
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-4">

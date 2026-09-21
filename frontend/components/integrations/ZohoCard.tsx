@@ -89,7 +89,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
       open={confirmPurge}
       onOpenChange={(o) => (!purge.isPending ? setConfirmPurge(o) : undefined)}
       title="Remove synced leads?"
-      description={`Deletes the ${leadsLabel} and tables imported from Zoho from Matrix. Your Zoho data is untouched and the connection stays; Sync now re-imports.`}
+      description={`Deletes the ${leadsLabel} and tables imported from Zoho from Pilot. Your Zoho data is untouched and the connection stays; Sync now re-imports.`}
       confirmLabel="Remove leads"
       destructive
       loading={purge.isPending}
@@ -353,7 +353,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
           ) : null}
 
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
-            <dt className="text-muted-foreground">Leads in Matrix</dt>
+            <dt className="text-muted-foreground">Leads in Pilot</dt>
             <dd className="text-right tabular-nums">{new Intl.NumberFormat("en-US").format(s.leadCount ?? 0)}</dd>
             <dt className="text-muted-foreground">Last sync</dt>
             <dd className="text-right">
@@ -390,7 +390,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
         open={confirmDisconnect}
         onOpenChange={(o) => (!disconnect.isPending ? setConfirmDisconnect(o) : undefined)}
         title="Disconnect Zoho CRM?"
-        description="Revokes Matrix’s access token. Leads already synced stay in My Leads, but syncing and write-back stop until you reconnect."
+        description="Revokes Pilot’s access token. Leads already synced stay in My Leads, but syncing and write-back stop until you reconnect."
         confirmLabel="Disconnect"
         destructive
         loading={disconnect.isPending}
@@ -407,7 +407,7 @@ export function ZohoCard({ item }: { item: IntegrationItem }) {
         open={confirmDisconnectPurge}
         onOpenChange={(o) => (!disconnect.isPending ? setConfirmDisconnectPurge(o) : undefined)}
         title="Disconnect & remove synced data?"
-        description={`Revokes Matrix’s access to Zoho AND deletes the ${leadsLabel}, tables and agent bindings imported from Zoho. Your Zoho CRM data is untouched. Reconnect and Sync now to import again.`}
+        description={`Revokes Pilot’s access to Zoho AND deletes the ${leadsLabel}, tables and agent bindings imported from Zoho. Your Zoho CRM data is untouched. Reconnect and Sync now to import again.`}
         confirmLabel="Disconnect & remove"
         destructive
         loading={disconnect.isPending}

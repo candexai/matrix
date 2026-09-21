@@ -195,7 +195,7 @@ export function extractionProviderLabel(p?: string | null): string {
   if (!s) return "AI";
   if (s.includes("openai")) return "OpenAI";
   if (s.includes("anthropic") || s.includes("claude")) return "Anthropic";
-  if (s.includes("eleven")) return "ElevenLabs";
+  if (s.includes("eleven")) return "Candex";
   return titleCase(s);
 }
 

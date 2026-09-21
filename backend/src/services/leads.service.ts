@@ -96,14 +96,14 @@ export async function createManualLead(workspaceId: string, input: Partial<LeadD
     phoneKey: phoneKey(phone) ?? undefined,
     company: input.company,
     leadStatus: input.leadStatus,
-    leadSource: input.leadSource || "Matrix",
+    leadSource: input.leadSource || "Pilot",
     city: input.city,
     fields,
   });
   if (input.pushToZoho) {
     const integ = await getIntegration(workspaceId);
     if (integ?.status === "connected") {
-      const res = await zohoCreateLead(integ, { ...fields, Lead_Source: fields.Lead_Source ?? "Matrix" });
+      const res = await zohoCreateLead(integ, { ...fields, Lead_Source: fields.Lead_Source ?? "Pilot" });
       if (res.ok && res.id) {
         lead.zohoId = res.id;
         lead.source = "zoho";

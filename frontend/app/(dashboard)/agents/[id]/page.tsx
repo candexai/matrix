@@ -75,9 +75,9 @@ export default function EditAgentPage() {
         description={a.description || "Voice agent"}
         actions={
           <>
-            <Tip label="Pull the latest configuration from ElevenLabs (overwrites local settings)">
+            <Tip label="Pull the latest configuration from Candex (overwrites local settings)">
               <Button variant="outline" onClick={() => sync.mutate(a._id)} loading={syncing}>
-                {!syncing ? <RefreshCw /> : null} Sync from ElevenLabs
+                {!syncing ? <RefreshCw /> : null} Sync from Candex
               </Button>
             </Tip>
             <Link href={`/test?agent=${a._id}`} className={buttonVariants({ variant: "soft" })}>
@@ -120,7 +120,7 @@ export default function EditAgentPage() {
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         title={`Delete “${a.name}”?`}
-        description="This removes the agent from Matrix and from your ElevenLabs workspace. Past conversations are kept."
+        description="This removes the agent from Pilot and from your Candex workspace. Past conversations are kept."
         confirmLabel="Delete agent"
         destructive
         loading={del.isPending}

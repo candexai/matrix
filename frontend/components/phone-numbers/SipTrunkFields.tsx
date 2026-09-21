@@ -49,7 +49,7 @@ export function inboundFromNumber(n: PhoneNumber): InboundForm {
 
 /* ---------- validation & payloads ---------- */
 
-const SECRET_MSG = "Re-enter the password — ElevenLabs never returns stored secrets, so saving trunk changes needs it again.";
+const SECRET_MSG = "Re-enter the password — Candex never returns stored secrets, so saving trunk changes needs it again.";
 
 export function validateOutbound(f: OutboundForm, opts: { requireAddress: boolean; secretsRequired: boolean }): TrunkErrors {
   const e: TrunkErrors = {};
@@ -151,7 +151,7 @@ function CredentialFields({ idPrefix, username, password, onUsername, onPassword
       <Field label="Username" hint="optional" htmlFor={`${idPrefix}-user`}>
         <Input id={`${idPrefix}-user`} value={username} onChange={(e) => onUsername(e.target.value)} autoComplete="off" spellCheck={false} placeholder="trunk-user" className="font-mono text-[13px]" />
       </Field>
-      <Field label="Password" hint="optional" htmlFor={`${idPrefix}-pass`} help={storedAuth && !password ? "A password is stored in ElevenLabs; it can't be shown here." : undefined} error={error}>
+      <Field label="Password" hint="optional" htmlFor={`${idPrefix}-pass`} help={storedAuth && !password ? "A password is stored in Candex; it can't be shown here." : undefined} error={error}>
         <SecretInput id={`${idPrefix}-pass`} value={password} onChange={(e) => onPassword(e.target.value)} placeholder={storedAuth ? "••••••••" : ""} />
       </Field>
     </div>
@@ -163,7 +163,7 @@ export function OutboundTrunkFields({ value, onChange, errors, requireAddress, s
   const set = <K extends keyof OutboundForm>(k: K, v: OutboundForm[K]) => onChange({ ...value, [k]: v });
   return (
     <div className="grid gap-4">
-      <Field label="Termination address" hint={requireAddress ? "required for outbound" : "optional"} htmlFor={`${id}-addr`} error={errors?.address} help={errors?.address ? undefined : "Your provider's SIP termination URI as host or host:port. ElevenLabs sends outbound INVITEs here."}>
+      <Field label="Termination address" hint={requireAddress ? "required for outbound" : "optional"} htmlFor={`${id}-addr`} error={errors?.address} help={errors?.address ? undefined : "Your provider's SIP termination URI as host or host:port. Candex sends outbound INVITEs here."}>
         <Input id={`${id}-addr`} value={value.address} onChange={(e) => set("address", e.target.value)} placeholder="sip.provider.com:5060" autoComplete="off" spellCheck={false} className="font-mono text-[13px]" />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">

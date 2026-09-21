@@ -141,8 +141,8 @@ export function ConversationDetail({ id, onDeleted }: { id: string; onDeleted: (
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onSelect={() => refresh.mutate(c._id, { onSuccess: () => toast.success("Refreshed from ElevenLabs") })}>
-                  <RefreshCw /> Refresh from ElevenLabs
+                <DropdownMenuItem onSelect={() => refresh.mutate(c._id, { onSuccess: () => toast.success("Refreshed from Candex") })}>
+                  <RefreshCw /> Refresh from Candex
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => analyze.mutate({ id: c._id, force: true })} disabled={c.status !== "done"}>
                   <Sparkles /> Re-analyse insights
@@ -202,7 +202,7 @@ export function ConversationDetail({ id, onDeleted }: { id: string; onDeleted: (
           <DialogHeader>
             <DialogTitle>Delete this conversation?</DialogTitle>
             <DialogDescription>
-              This removes the call with {name} from Matrix. The recording and transcript stay on ElevenLabs.
+              This removes the call with {name} from Pilot. The recording and transcript stay on Candex.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

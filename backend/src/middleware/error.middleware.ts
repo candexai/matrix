@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { HttpError, upstreamMessage } from "../utils/http";
 import { ZodError } from "zod";
+import { brandSafe } from "../utils/brand";
 
 export function notFound(_req: Request, res: Response) {
   res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Route not found" } });
@@ -8,7 +9,7 @@ export function notFound(_req: Request, res: Response) {
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
   if (err instanceof HttpError) {
-    return res.status(err.status).json({ success: false, error: { code: err.code, message: err.message, details: err.details } });
+    return res.status(err.status).json({ success: false, error: { code: err.code, message: brandSafe(err.message), details: err.details } });
   }
   if (err instanceof ZodError) {
     return res.status(400).json({
@@ -19,8 +20,8 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   const anyErr = err as { response?: { status?: number }; message?: string; stack?: string };
   if (anyErr?.response?.status) {
     const status = anyErr.response.status >= 500 ? 502 : anyErr.response.status;
-    return res.status(status).json({ success: false, error: { code: "UPSTREAM_ERROR", message: upstreamMessage(err) } });
+    return res.status(status).json({ success: false, error: { code: "UPSTREAM_ERROR", message: brandSafe(upstreamMessage(err)) } });
   }
   console.error("[error]", anyErr?.stack || err);
-  return res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: anyErr?.message || "Internal server error" } });
+  return res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: brandSafe(anyErr?.message || "Internal server error") } });
 }

@@ -71,11 +71,11 @@ export interface TtsModelOption extends CatalogOption {
 
 export const TTS_MODELS: TtsModelOption[] = [
   // Mirrors the per-language allowlist enforced by the Python ElevenLabs service.
-  { value: "eleven_v3_conversational", label: "Eleven v3 Conversational", description: "Expressive mode, 70+ languages, best quality (default)", languages: "*", latency: "medium", quality: "highest" },
-  { value: "eleven_flash_v2", label: "Eleven Flash v2", description: "Ultra-low latency · English only", languages: ["en"], latency: "lowest", quality: "good" },
-  { value: "eleven_turbo_v2", label: "Eleven Turbo v2", description: "Low latency, higher quality · English only", languages: ["en"], latency: "low", quality: "high" },
-  { value: "eleven_flash_v2_5", label: "Eleven Flash v2.5", description: "Ultra-low latency · non-English primary languages", languages: "non-en", latency: "lowest", quality: "good" },
-  { value: "eleven_turbo_v2_5", label: "Eleven Turbo v2.5", description: "Low latency, higher quality · non-English primary languages", languages: "non-en", latency: "low", quality: "high" },
+  { value: "eleven_v3_conversational", label: "Candex AI Expressive", description: "Most natural and expressive, 70+ languages, best quality (default)", languages: "*", latency: "medium", quality: "highest" },
+  { value: "eleven_flash_v2", label: "Candex AI Swift", description: "Ultra-low latency · English only", languages: ["en"], latency: "lowest", quality: "good" },
+  { value: "eleven_turbo_v2", label: "Candex AI Balanced", description: "Low latency, higher quality · English only", languages: ["en"], latency: "low", quality: "high" },
+  { value: "eleven_flash_v2_5", label: "Candex AI Swift Multilingual", description: "Ultra-low latency · non-English primary languages", languages: "non-en", latency: "lowest", quality: "good" },
+  { value: "eleven_turbo_v2_5", label: "Candex AI Balanced Multilingual", description: "Low latency, higher quality · non-English primary languages", languages: "non-en", latency: "low", quality: "high" },
 ];
 
 export const DEFAULT_TTS_MODEL = "eleven_v3_conversational";
@@ -122,8 +122,8 @@ export const LANGUAGES: LanguageOption[] = [
 ];
 
 export const ASR_PROVIDERS: CatalogOption[] = [
-  { value: "elevenlabs", label: "ElevenLabs (default)" },
-  { value: "scribe_realtime", label: "Scribe Realtime" },
+  { value: "elevenlabs", label: "Candex AI (default)" },
+  { value: "scribe_realtime", label: "Candex AI Realtime" },
 ];
 
 export const TURN_MODES: CatalogOption[] = [

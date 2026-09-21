@@ -14,7 +14,7 @@ Goals:
 If the person is not interested or asks you to stop, thank them and end the call.`;
 
 export const DEFAULT_AGENT_CONFIG: AgentFormConfig = {
-  first_message: "Hi {{name}}, this is {{agent_name}} calling from Matrix. Do you have a quick moment?",
+  first_message: "Hi {{name}}, this is {{agent_name}} calling from Pilot. Do you have a quick moment?",
   system_prompt: DEFAULT_SYSTEM_PROMPT,
   language: "en",
   additional_languages: [],
@@ -66,7 +66,7 @@ export const DEFAULT_AGENT_CONFIG: AgentFormConfig = {
 
   post_call_webhook_enabled: true,
   post_call_webhook_events: ["transcript"],
-  dynamic_variable_placeholders: { name: "there", agent_name: "Matrix Assistant" },
+  dynamic_variable_placeholders: { name: "there", agent_name: "Pilot Assistant" },
 };
 
 export function withDefaults(partial: Partial<AgentFormConfig> | undefined): AgentFormConfig {

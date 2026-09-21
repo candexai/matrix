@@ -78,7 +78,7 @@ export function EditPhoneNumberDialog({ number, open, onOpenChange }: { number: 
             <span className="font-mono text-base">{number?.phone_number}</span>
             <Badge variant={pm.variant}>{pm.label}</Badge>
           </DialogTitle>
-          <DialogDescription>{sip ? "Rename the number or update its SIP trunk settings. Changes apply in ElevenLabs immediately." : "Rename the number. Twilio routing is managed by ElevenLabs."}</DialogDescription>
+          <DialogDescription>{sip ? "Rename the number or update its SIP trunk settings. Changes apply in Candex immediately." : "Rename the number. Twilio routing is managed by Candex."}</DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-5">
           <form
@@ -96,9 +96,9 @@ export function EditPhoneNumberDialog({ number, open, onOpenChange }: { number: 
           {sip ? (
             <>
               {(storedOutboundAuth || storedInboundAuth) && (outboundDirty || inboundDirty) ? (
-                <InfoBox tone="warning">ElevenLabs doesn't return stored passwords. Saving trunk changes replaces the whole trunk config, so re-enter the password (or clear the username to drop auth).</InfoBox>
+                <InfoBox tone="warning">Candex doesn't return stored passwords. Saving trunk changes replaces the whole trunk config, so re-enter the password (or clear the username to drop auth).</InfoBox>
               ) : null}
-              <TrunkSection icon={ArrowUpFromLine} title="Outbound trunk" description="Where ElevenLabs sends the calls your agents place.">
+              <TrunkSection icon={ArrowUpFromLine} title="Outbound trunk" description="Where Candex sends the calls your agents place.">
                 <OutboundTrunkFields value={outbound} onChange={setOutbound} errors={submitted ? errors.outbound : undefined} requireAddress={number?.supports_outbound !== false} storedAuth={storedOutboundAuth} />
               </TrunkSection>
               <TrunkSection icon={ArrowDownToLine} title="Inbound trunk" description="Which addresses and numbers may reach this number." open={inboundOpen} onToggle={() => setInboundOpen((o) => !o)}>

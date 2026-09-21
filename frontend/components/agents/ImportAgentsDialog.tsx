@@ -27,8 +27,8 @@ export function ImportAgentsDialog({ open, onOpenChange }: { open: boolean; onOp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="lg">
         <DialogHeader>
-          <DialogTitle>Import from ElevenLabs</DialogTitle>
-          <DialogDescription>Agents in your ElevenLabs workspace that aren't in Matrix yet. Importing pulls the full configuration.</DialogDescription>
+          <DialogTitle>Import from Candex</DialogTitle>
+          <DialogDescription>Agents in your Candex workspace that aren't in Pilot yet. Importing pulls the full configuration.</DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export function ImportAgentsDialog({ open, onOpenChange }: { open: boolean; onOp
                 </Button>
               </div>
             ) : rows.length === 0 ? (
-              <div className="px-4 py-10 text-center text-sm text-muted-foreground">{q ? "No agents match your search." : "No agents found in your ElevenLabs workspace."}</div>
+              <div className="px-4 py-10 text-center text-sm text-muted-foreground">{q ? "No agents match your search." : "No agents found in your Candex workspace."}</div>
             ) : (
               <div className="max-h-[50vh] divide-y divide-border overflow-y-auto">
                 {rows.map((r) => {

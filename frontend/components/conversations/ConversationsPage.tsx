@@ -155,9 +155,9 @@ export function ConversationsPage() {
 
   const leadLabel = leadId ? items.find((c) => c.leadId === leadId)?.leadName : undefined;
   const syncButton = (
-    <Tip label="Pull recent calls from ElevenLabs when the post-call webhook can't reach this server">
+    <Tip label="Pull recent calls from Candex when the post-call webhook can't reach this server">
       <Button variant="secondary" onClick={() => sync.mutate({})} loading={sync.isPending}>
-        {sync.isPending ? null : <RefreshCw />} Sync from ElevenLabs
+        {sync.isPending ? null : <RefreshCw />} Sync from Candex
       </Button>
     </Tip>
   );
@@ -315,7 +315,7 @@ export function ConversationsPage() {
           <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
             <aside className="flex w-[380px] shrink-0 flex-col border-r border-border">
               {elevenMissing && items.length === 0 ? (
-                <ElevenLabsRequired className="py-12" description="Conversations are pulled from your ElevenLabs account. Connect it in Integrations to load them here." />
+                <ElevenLabsRequired className="py-12" description="Conversations are pulled from your Candex account. Connect it in Integrations to load them here." />
               ) : (
                 <ConversationList
                   items={items}

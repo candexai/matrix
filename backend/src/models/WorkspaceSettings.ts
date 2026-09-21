@@ -16,7 +16,7 @@ export interface WorkspaceSettingsDoc extends Document {
 const WorkspaceSettingsSchema = new Schema<WorkspaceSettingsDoc>(
   {
     workspaceId: { type: String, required: true, unique: true, default: "default" },
-    name: { type: String, default: "Matrix" },
+    name: { type: String, default: "Pilot" },
     elevenWebhook: { webhookId: String, url: String, secretEnc: String, events: [String], createdAt: Date },
     zohoApp: { clientId: String, clientSecretEnc: String, accountsUrl: String, redirectUri: String, updatedAt: Date },
     elevenLabs: { apiKeyEnc: String, baseUrl: String, keyHint: String, connectedAt: Date, accountName: String },

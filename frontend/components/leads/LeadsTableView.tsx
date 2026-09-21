@@ -410,7 +410,7 @@ export function LeadsTableView({ listId }: { listId: string }) {
               <EmptyState
                 icon={Table2}
                 title="No leads yet"
-                description="Zoho is connected. Pull your Leads module into Matrix to start calling."
+                description="Zoho is connected. Pull your Leads module into Pilot to start calling."
                 action={
                   <div className="flex items-center gap-2">
                     <Button onClick={() => sync.mutate({ full: true })} loading={syncing}>
@@ -426,7 +426,7 @@ export function LeadsTableView({ listId }: { listId: string }) {
               <EmptyState
                 icon={Plug}
                 title="Connect Zoho CRM"
-                description="Sync your Zoho Leads into Matrix, then attach a voice agent to call them and fill in missing details automatically."
+                description="Sync your Zoho Leads into Pilot, then attach a voice agent to call them and fill in missing details automatically."
                 action={
                   <div className="flex items-center gap-2">
                     <Link href="/integrations" className={buttonVariants()}>
@@ -529,7 +529,7 @@ export function LeadsTableView({ listId }: { listId: string }) {
         open={Boolean(deleteLead)}
         onOpenChange={(o) => !o && setDeleteLead(null)}
         title={`Delete ${deleteLead?.fullName ?? "lead"}?`}
-        description={deleteLead?.zohoId ? "Removes the lead from Matrix only — the Zoho CRM record is kept and will come back on the next sync." : "This removes the lead from Matrix permanently."}
+        description={deleteLead?.zohoId ? "Removes the lead from Pilot only — the Zoho CRM record is kept and will come back on the next sync." : "This removes the lead from Pilot permanently."}
         confirmLabel="Delete"
         destructive
         loading={del.isPending}

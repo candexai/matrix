@@ -10,7 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tip } from "@/components/ui/tooltip";
-import { optionLabel, voiceName } from "./agent-utils";
+import { optionLabel, ttsModelLabel, voiceName } from "./agent-utils";
 import { PreviewCallDialog } from "./PreviewCallDialog";
 
 function Stat({ label, value }: { label: string; value: string }) {
@@ -53,7 +53,7 @@ export function AgentCard({ agent, catalog, voices, onSync, onDelete, syncing }:
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem onSelect={() => onSync(agent)} disabled={syncing}>
-              <RefreshCw className={cn(syncing && "animate-spin")} /> Sync from ElevenLabs
+              <RefreshCw className={cn(syncing && "animate-spin")} /> Sync from Candex
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={copyId}>
               <Copy /> Copy agent ID
@@ -74,7 +74,7 @@ export function AgentCard({ agent, catalog, voices, onSync, onDelete, syncing }:
           <Cpu /> {optionLabel(catalog?.llmModels, cfg.llm, cfg.llm || "—")}
         </Badge>
         <Badge variant="outline">
-          <AudioWaveform /> {optionLabel(catalog?.ttsModels, cfg.tts_model_id, cfg.tts_model_id || "—")}
+          <AudioWaveform /> {ttsModelLabel(catalog?.ttsModels, cfg.tts_model_id)}
         </Badge>
         <Tip label={cfg.voice_id ? `Voice ID ${cfg.voice_id}` : "No voice selected"}>
           <Badge variant="outline">

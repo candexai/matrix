@@ -85,7 +85,7 @@ export function buildInsightsPrompt(conv: ConversationDoc, taxonomy: InsightTagD
     conv.direction ? `Direction: ${conv.direction}` : "",
     typeof conv.durationSecs === "number" ? `Duration: ${conv.durationSecs}s` : "",
     conv.terminationReason ? `Ended by: ${conv.terminationReason}` : "",
-    conv.callSuccessful ? `ElevenLabs outcome: ${conv.callSuccessful}` : "",
+    conv.callSuccessful ? `Platform-graded outcome: ${conv.callSuccessful}` : "",
     conv.summary ? `Summary: ${conv.summary}` : "",
   ]
     .filter(Boolean)

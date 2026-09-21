@@ -47,7 +47,7 @@ router.get("/", asyncHandler(async (req, res) => {
     voice: [
       {
         id: "elevenlabs",
-        name: "ElevenLabs",
+        name: "Candex",
         category: "voice",
         available: true,
         configured: eleven.configured,
@@ -61,7 +61,7 @@ router.get("/", asyncHandler(async (req, res) => {
         // the FastAPI wrapper carries its own copy of the env key → only meaningful for the env-backed workspace
         pythonService: pythonService.configured && eleven.source === "env" ? env.ELEVENLABS_SERVICE_URL : null,
       },
-      { id: "twilio", name: "Twilio", category: "voice", available: false, note: "Import numbers in ElevenLabs" },
+      { id: "twilio", name: "Twilio", category: "voice", available: false, note: "Import numbers from Phone Numbers" },
     ],
     channels: [
       { id: "website", name: "Website chat", category: "channels", available: false },

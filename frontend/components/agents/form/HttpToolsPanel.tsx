@@ -115,7 +115,7 @@ export function HttpToolsPanel({ selected, onChange }: { selected: string[]; onC
         onChange={onChange}
         placeholder="tool_01j…"
         unknownCount={tools.data ? unknown.length : 0}
-        help="For tools created elsewhere (ElevenLabs dashboard → Tools → copy ID). Tools ticked above appear here too. Press Enter after each."
+        help="For tools created outside Pilot — paste their tool ID. Tools ticked above appear here too. Press Enter after each."
       />
 
       <HttpToolDialog
@@ -128,7 +128,7 @@ export function HttpToolsPanel({ selected, onChange }: { selected: string[]; onC
         open={Boolean(pendingDelete)}
         onOpenChange={(o) => (!o ? setPendingDelete(null) : undefined)}
         title={`Delete "${pendingDelete?.name ?? "tool"}"?`}
-        description="Removes the tool from your ElevenLabs workspace for every agent that uses it. This cannot be undone."
+        description="Removes the tool from your Candex workspace for every agent that uses it. This cannot be undone."
         confirmLabel="Delete tool"
         destructive
         loading={del.isPending}

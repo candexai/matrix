@@ -76,7 +76,7 @@ export function ImportTwilioDialog({ open, onOpenChange, agents, agentsLoading }
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>Import Twilio number</DialogTitle>
-          <DialogDescription>ElevenLabs takes over the number's voice webhook so your agents can answer and place calls on it.</DialogDescription>
+          <DialogDescription>Candex takes over the number's voice webhook so your agents can answer and place calls on it.</DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-5">
           <form
@@ -100,7 +100,7 @@ export function ImportTwilioDialog({ open, onOpenChange, agents, agentsLoading }
               <Field label="Account SID" htmlFor={`${id}-sid`} error={show("sid")}>
                 <Input id={`${id}-sid`} value={sid} onChange={(e) => setSid(e.target.value)} placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autoComplete="off" spellCheck={false} className="font-mono text-[13px]" />
               </Field>
-              <Field label="Auth token" htmlFor={`${id}-token`} error={show("token")} help="Stored by ElevenLabs only; Matrix never keeps it.">
+              <Field label="Auth token" htmlFor={`${id}-token`} error={show("token")} help="Stored by Candex only; Pilot never keeps it.">
                 <SecretInput id={`${id}-token`} value={token} onChange={(e) => setToken(e.target.value)} placeholder="Your Twilio auth token" />
               </Field>
               <p className="text-xs leading-5 text-muted-foreground">
@@ -108,7 +108,7 @@ export function ImportTwilioDialog({ open, onOpenChange, agents, agentsLoading }
                 <a href="https://console.twilio.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-primary hover:underline">
                   Twilio Console home page <ExternalLink className="size-3" />
                 </a>
-                . The number must already be purchased in that account — ElevenLabs can't buy numbers for you.
+                . The number must already be purchased in that account — Candex can't buy numbers for you.
               </p>
             </div>
 
@@ -126,7 +126,7 @@ export function ImportTwilioDialog({ open, onOpenChange, agents, agentsLoading }
             <button type="submit" className="hidden" aria-hidden />
           </form>
 
-          <InfoBox>Numbers are stored in your ElevenLabs workspace. Removing the number here only detaches it from ElevenLabs — it stays in Twilio.</InfoBox>
+          <InfoBox>Numbers are stored in your Candex workspace. Removing the number here only detaches it from Candex — it stays in Twilio.</InfoBox>
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mut.isPending}>

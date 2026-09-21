@@ -299,7 +299,7 @@ function AgentFormInner({ catalog, initial, mode }: { catalog: Catalog; initial?
           ) : mode === "edit" ? (
             "All changes saved"
           ) : (
-            "Everything maps 1:1 to ElevenLabs Conversational AI."
+            "Everything maps 1:1 to Candex Conversational AI."
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">

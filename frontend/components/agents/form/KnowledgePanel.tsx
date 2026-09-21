@@ -43,7 +43,7 @@ export function KnowledgePanel({ selected, onChange }: { selected: string[]; onC
     <div className="flex flex-col gap-3">
       <SubHeading
         title={`Knowledge base · ${selected.length} selected`}
-        description="Documents are stored in your ElevenLabs workspace and can be reused by every agent. The agent answers from them using RAG."
+        description="Documents are stored in your Candex workspace and can be reused by every agent. The agent answers from them using RAG."
         action={<AddButton onClick={() => setAddOpen(true)}>Add document</AddButton>}
       />
 
@@ -109,7 +109,7 @@ export function KnowledgePanel({ selected, onChange }: { selected: string[]; onC
         </PanelList>
       )}
 
-      <AdvancedIds label="document IDs" value={selected} onChange={onChange} placeholder="doc_01j…" unknownCount={docs.data ? unknown.length : 0} help="For documents uploaded elsewhere in ElevenLabs. Attached with usage mode “auto”. Press Enter after each." />
+      <AdvancedIds label="document IDs" value={selected} onChange={onChange} placeholder="doc_01j…" unknownCount={docs.data ? unknown.length : 0} help="For documents uploaded elsewhere in Candex. Attached with usage mode “auto”. Press Enter after each." />
 
       <KnowledgeDocDialog open={addOpen} onOpenChange={setAddOpen} onAdded={(doc) => onChange(uniq([...selected, doc.id]))} />
       <ConfirmDialog
@@ -118,8 +118,8 @@ export function KnowledgePanel({ selected, onChange }: { selected: string[]; onC
         title={`Delete "${pendingDelete?.name ?? "document"}"?`}
         description={
           pendingDelete?.dependentAgents
-            ? `Removes it from your ElevenLabs workspace. It is used by ${pendingDelete.dependentAgents} agent${pendingDelete.dependentAgents === 1 ? "" : "s"} — ElevenLabs may refuse until they are detached.`
-            : "Removes it from your ElevenLabs workspace for every agent. This cannot be undone."
+            ? `Removes it from your Candex workspace. It is used by ${pendingDelete.dependentAgents} agent${pendingDelete.dependentAgents === 1 ? "" : "s"} — Candex may refuse until they are detached.`
+            : "Removes it from your Candex workspace for every agent. This cannot be undone."
         }
         confirmLabel="Delete document"
         destructive

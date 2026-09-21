@@ -63,7 +63,7 @@ export function AgentSelect({
           <span className="text-muted-foreground">{noneLabel}</span>
         </SelectItem>
         {orphan ? (
-          <SelectItem value={orphan.agent_id} description="Assigned in ElevenLabs · not imported into Matrix">
+          <SelectItem value={orphan.agent_id} description="Assigned in Candex · not imported into Pilot">
             {orphan.agent_name}
           </SelectItem>
         ) : null}

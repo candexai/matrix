@@ -38,7 +38,7 @@ export function leadDynamicVariables(lead: LeadDoc, agent?: AgentDoc | null): Re
     lead_status: lead.leadStatus || "",
     lead_source: lead.leadSource || "",
     zoho_lead_id: lead.zohoId || "",
-    agent_name: agent?.config?.dynamic_variable_placeholders?.agent_name || agent?.name || "Matrix Assistant",
+    agent_name: agent?.config?.dynamic_variable_placeholders?.agent_name || agent?.name || "Pilot Assistant",
   };
   for (const [k, v] of Object.entries(lead.fields ?? {})) {
     if (v === null || v === undefined || typeof v === "object") continue;
@@ -62,7 +62,7 @@ async function resolveAgentAndNumber(workspaceId: string, agentId?: string, phon
   let phone = wantedId ? numbers.find((n) => n.phone_number_id === wantedId) : undefined;
   if (!phone) phone = numbers.find((n) => n.assigned_agent?.agent_id === agent!.elevenAgentId && n.supports_outbound !== false);
   if (!phone) phone = numbers.find((n) => n.supports_outbound !== false);
-  if (!phone) throw new HttpError(400, "No outbound phone number is available in your ElevenLabs workspace. Import a Twilio or SIP number first.", "PHONE_NUMBER_REQUIRED");
+  if (!phone) throw new HttpError(400, "No outbound phone number is available in your Candex workspace. Import a Twilio or SIP number first.", "PHONE_NUMBER_REQUIRED");
   return { agent, phone };
 }
 
@@ -84,7 +84,7 @@ export async function callLead(workspaceId: string, leadId: string, opts: { agen
     to_number: to,
     dynamic_variables: dyn,
   });
-  if (!result.success && !result.conversation_id) throw new HttpError(502, result.message || "ElevenLabs could not place the call", "CALL_FAILED");
+  if (!result.success && !result.conversation_id) throw new HttpError(502, result.message || "Candex could not place the call", "CALL_FAILED");
 
   const conv = result.conversation_id
     ? await Conversation.findOneAndUpdate(
@@ -133,7 +133,7 @@ export async function testCallAgent(workspaceId: string, agentId: string, input:
   };
   const eleven = await getElevenClient(workspaceId);
   const result = await eleven.outboundCall({ provider, agent_id: agent.elevenAgentId, agent_phone_number_id: phone.phone_number_id, to_number: to, dynamic_variables: dyn });
-  if (!result.success && !result.conversation_id) throw new HttpError(502, result.message || "ElevenLabs could not place the call", "CALL_FAILED");
+  if (!result.success && !result.conversation_id) throw new HttpError(502, result.message || "Candex could not place the call", "CALL_FAILED");
   const conv = result.conversation_id
     ? await Conversation.findOneAndUpdate(
         { elevenConversationId: result.conversation_id },
@@ -160,7 +160,7 @@ export async function batchCallLeads(workspaceId: string, input: { leadIds: stri
 
   const eleven = await getElevenClient(workspaceId);
   const result = await eleven.submitBatchCall({
-    call_name: input.callName || `Matrix batch · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
+    call_name: input.callName || `Pilot batch · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,
     agent_id: agent.elevenAgentId,
     agent_phone_number_id: phone.phone_number_id,
     recipients: recipients.map(({ lead, to }) => ({ phone_number: to, conversation_initiation_client_data: { dynamic_variables: { ...leadDynamicVariables(lead, agent), lead_list_id: listId ?? lead.listIds?.[0] ?? "" } } })),

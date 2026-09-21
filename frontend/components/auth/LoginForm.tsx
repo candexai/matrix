@@ -47,7 +47,7 @@ export function LoginForm() {
       subtitle="Welcome back to your workspace."
       footer={
         <>
-          New to Matrix?{" "}
+          New to Pilot?{" "}
           <Link href="/signup" className="font-medium text-primary hover:underline">
             Create an account
           </Link>

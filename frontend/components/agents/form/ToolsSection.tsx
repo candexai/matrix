@@ -38,7 +38,7 @@ export function ToolsSection({ cfg, set, catalog, errors }: SectionProps) {
   return (
     <SectionCard id="tools" title="Tools & transfer" description="What the agent is allowed to do beyond talking." icon={Wrench}>
       <div className="flex flex-col gap-3">
-        <SubHeading title="Built-in tools" description="System tools ElevenLabs runs for you — no code required." />
+        <SubHeading title="Built-in tools" description="System tools Candex runs for you — no code required." />
         <div className="grid gap-2 md:grid-cols-2">
           {catalog.builtInTools.map((t) => (
             <CheckRow key={t.value} checked={has(t.value)} onCheckedChange={(v) => toggleTool(t.value, v)} label={t.label} description={t.description} />
@@ -46,7 +46,7 @@ export function ToolsSection({ cfg, set, catalog, errors }: SectionProps) {
         </div>
         {has("voicemail_detection") ? (
           <Field label="Voicemail message" help="Left on the answering machine when voicemail is detected. Leave empty to hang up silently." error={errors.voicemail_message}>
-            <Textarea rows={2} value={cfg.voicemail_message ?? ""} onChange={(e) => set("voicemail_message", e.target.value)} placeholder="Hi {{name}}, this is {{agent_name}} from Matrix. Sorry we missed you — we'll try again soon." />
+            <Textarea rows={2} value={cfg.voicemail_message ?? ""} onChange={(e) => set("voicemail_message", e.target.value)} placeholder="Hi {{name}}, this is {{agent_name}} from Pilot. Sorry we missed you — we'll try again soon." />
           </Field>
         ) : null}
       </div>

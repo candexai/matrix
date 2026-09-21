@@ -86,7 +86,7 @@ export function buildGeneratorPrompt(input: {
   website?: { url: string; title?: string; text: string };
 }): { system: string; user: string } {
   const system = [
-    "You are an expert designer of outbound AI voice-agent scripts for sales and lead qualification (ElevenLabs Conversational AI).",
+    "You are an expert designer of outbound AI voice-agent scripts for sales and lead qualification (real-time conversational voice AI).",
     "You will receive: the business's instructions, an optional summary of their website, and a CRM lead table with (a) the columns already available for every lead (these are passed to the agent as dynamic variables like {{name}}, {{company}}) and (b) the EMPTY columns the agent must collect during the call.",
     "Produce ONE agent as strict JSON:",
     '{"name":"","description":"","first_message":"","system_prompt":"","fields":[{"zohoField":"api_name","label":"","description":"what to extract (for post-call extraction)","askAs":"the exact natural question the agent should ask"}],"evaluation_criteria":[{"id":"snake","name":"","conversation_goal_prompt":""}],"updateLeadStatusTo":""}',
@@ -198,7 +198,7 @@ async function pickVoice(workspaceId: string, language: string, preferred?: stri
   const voices = await eleven.listVoices();
   const lang = language.toLowerCase().split("-")[0];
   const match = voices.find((v) => (v.verified_languages ?? []).some((l) => l.language?.toLowerCase().startsWith(lang)) && v.category === "premade") ?? voices.find((v) => v.category === "premade") ?? voices[0];
-  if (!match) throw new HttpError(400, "No voices available in your ElevenLabs workspace", "NO_VOICE");
+  if (!match) throw new HttpError(400, "No voices available in your Candex workspace", "NO_VOICE");
   return match.voice_id;
 }
 

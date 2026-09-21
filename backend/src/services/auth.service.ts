@@ -5,6 +5,7 @@ import { User, UserDoc } from "../models/User";
 import { WorkspaceSettings } from "../models/WorkspaceSettings";
 import { HttpError } from "../utils/http";
 import { env } from "../config/env";
+import { LEGACY_DEFAULT_WORKSPACE_NAMES } from "../utils/brand";
 
 export const AUTH_COOKIE = "matrix_session";
 const SESSION_DAYS = 30;
@@ -71,7 +72,7 @@ export async function signup(input: { email: string; password: string; name: str
   const workspaceId = bootstrap ? env.DEFAULT_WORKSPACE_ID : newWorkspaceId();
   const user = await User.create({ email, passwordHash: await bcrypt.hash(input.password, 11), name: input.name.trim(), workspaceId, role: "owner", lastLoginAt: new Date() });
   const settings = (await WorkspaceSettings.findOne({ workspaceId })) ?? (await WorkspaceSettings.create({ workspaceId }));
-  if (input.company?.trim() || settings.name === "Matrix") {
+  if (input.company?.trim() || LEGACY_DEFAULT_WORKSPACE_NAMES.includes(settings.name)) {
     settings.name = input.company?.trim() || `${user.name}'s workspace`;
     await settings.save();
   }

@@ -43,7 +43,7 @@ export function SpeechSection({ cfg, set, catalog, errors }: SectionProps) {
       </Grid2>
 
       <Field label="Keyword boosting" hint="optional" help="Product names, brands or jargon the recogniser should favour. Press Enter after each keyword.">
-        <TagInput value={cfg.asr_keywords} onChange={(v) => set("asr_keywords", v)} placeholder="e.g. CandexAI, Matrix, Zoho" ariaLabel="ASR keywords" />
+        <TagInput value={cfg.asr_keywords} onChange={(v) => set("asr_keywords", v)} placeholder="e.g. CandexAI, Pilot, Zoho" ariaLabel="ASR keywords" />
       </Field>
 
       <div className="flex flex-col gap-3">

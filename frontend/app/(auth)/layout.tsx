@@ -4,7 +4,7 @@ import { Logo } from "@/components/layout/Logo";
 import { APP_FULL_NAME } from "@/lib/brand";
 
 const FEATURES: { icon: LucideIcon; text: string }[] = [
-  { icon: AudioWaveform, text: "ElevenLabs voice agents" },
+  { icon: AudioWaveform, text: "Candex AI voice agents" },
   { icon: Table2, text: "Zoho CRM lead tables" },
   { icon: Sparkles, text: "AI insights after every call" },
 ];

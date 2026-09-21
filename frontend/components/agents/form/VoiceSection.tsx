@@ -237,7 +237,7 @@ function VoicePicker({ value, onChange, error, language, languageLabel }: { valu
           ) : (
             <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
               <TriangleAlert className="size-5 text-warning" />
-              <p className="text-sm">Couldn't load voices from ElevenLabs.</p>
+              <p className="text-sm">Couldn't load voices from Candex.</p>
               <p className="text-xs text-muted-foreground">{errorMessage(voices.error)}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => voices.refetch()}>
@@ -250,7 +250,7 @@ function VoicePicker({ value, onChange, error, language, languageLabel }: { valu
             </div>
           )
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-muted-foreground">{list.length ? "No voices match these filters." : "Your ElevenLabs library has no voices yet."}</div>
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">{list.length ? "No voices match these filters." : "Your Candex library has no voices yet."}</div>
         ) : (
           filtered.map((v) => {
             const isSel = v.voice_id === value;
@@ -308,7 +308,7 @@ function VoicePicker({ value, onChange, error, language, languageLabel }: { valu
       </div>
       {manual ? (
         <div className="border-t border-border px-4 py-3">
-          <Field label="Voice ID" help="Paste an ElevenLabs voice_id — useful for shared-library or cloned voices not listed above.">
+          <Field label="Voice ID" help="Paste a Candex voice_id — useful for shared-library or cloned voices not listed above.">
             <Input value={value} onChange={(e) => onChange(e.target.value.trim())} className="font-mono text-[13px]" placeholder="21m00Tcm4TlvDq8ikWAM" />
           </Field>
         </div>
@@ -338,7 +338,7 @@ export function VoiceSection({ cfg, set, catalog, errors }: SectionProps) {
   return (
     <SectionCard id="voice" title="Voice & text-to-speech" description="The voice callers hear and how it's rendered." icon={MicVocal}>
       <div className="flex flex-col gap-3">
-        <SubHeading title="Voice" description="From your ElevenLabs voice library. Preview before you pick." />
+        <SubHeading title="Voice" description="From your Candex voice library. Preview before you pick." />
         <VoicePicker value={cfg.voice_id} onChange={(id) => set("voice_id", id)} error={errors.voice_id} language={cfg.language} languageLabel={languageLabel} />
       </div>
 
@@ -349,7 +349,7 @@ export function VoiceSection({ cfg, set, catalog, errors }: SectionProps) {
       </div>
 
       {isV3 ? (
-        <SwitchRow label="Expressive mode" help="Lets Eleven v3 act on emotion and emphasis cues in the text (e.g. audio tags like [laughs], [whispers])." checked={cfg.expressive_mode ?? true} onCheckedChange={(v) => set("expressive_mode", v)} />
+        <SwitchRow label="Expressive mode" help="Lets Candex AI Expressive act on emotion and emphasis cues in the text (e.g. audio tags like [laughs], [whispers])." checked={cfg.expressive_mode ?? true} onCheckedChange={(v) => set("expressive_mode", v)} />
       ) : null}
 
       <div className="grid gap-5 md:grid-cols-3">

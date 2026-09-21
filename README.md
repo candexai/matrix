@@ -1,4 +1,6 @@
-# Matrix × CandexAI
+# Pilot × CandexAI
+
+> **Naming.** The product is branded **Pilot × CandexAI** (the repo, database and process names still say `matrix`). In the UI the voice/AI engine is white-labelled: ElevenLabs appears as **Candex**, and the voice models as **Candex AI Expressive / Swift / Balanced (+ Multilingual)**. Labels live in `backend/src/constants/catalog.ts`; `backend/src/utils/brand.ts` rewrites vendor and model names in every error message sent to the browser; the product name and logo are in `frontend/lib/brand.ts` and `frontend/components/layout/Logo.tsx`. Set `NEXT_PUBLIC_SIP_INBOUND_HOST` (frontend env) to a host you own if the SIP dialog should show an inbound SIP address; without it the dialog tells users to ask Candex for it. Technical docs below keep the real vendor names.
 
 Voice-agent + CRM platform: ElevenLabs Conversational AI agents call your Zoho CRM leads, and after each call the collected answers fill the lead's **empty** fields and are written back to Zoho.
 

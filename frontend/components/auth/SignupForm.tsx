@@ -83,7 +83,7 @@ export function SignupForm() {
       }
     >
       <AuthNotice tone="info" className="mb-5">
-        Every account gets its own private workspace. Connect your ElevenLabs and Zoho accounts from Integrations after signing up.
+        Every account gets its own private workspace. Connect your Candex and Zoho accounts from Integrations after signing up.
       </AuthNotice>
 
       <form onSubmit={onSubmit} noValidate className="space-y-4">

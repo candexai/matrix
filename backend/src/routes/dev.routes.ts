@@ -49,7 +49,7 @@ router.post("/seed", asyncHandler(async (req, res) => {
       workspaceId: ws,
       elevenAgentId: `agent_seed_${Date.now().toString(36)}`,
       name: "Lead Qualifier (demo)",
-      description: "Seeded demo agent – not connected to ElevenLabs.",
+      description: "Seeded demo agent – not connected to Candex.",
       config: withDefaults({
         voice_id: "21m00Tcm4TlvDq8ikWAM",
         data_collection: [
@@ -124,7 +124,7 @@ router.post("/seed", asyncHandler(async (req, res) => {
       status: "done",
       callSuccessful: outcomes[i],
       transcript: [
-        { role: "agent", message: `Hi ${lead.firstName}, this is Maya calling from Matrix. Do you have a quick moment?`, timeInCallSecs: 0 },
+        { role: "agent", message: `Hi ${lead.firstName}, this is Maya calling from Pilot. Do you have a quick moment?`, timeInCallSecs: 0 },
         { role: "user", message: ok ? "Sure, go ahead." : "I'm a bit busy right now.", timeInCallSecs: 4 },
         { role: "agent", message: "Great. Could you tell me roughly what budget you have in mind?", timeInCallSecs: 8 },
         { role: "user", message: ok ? `Around ${(i + 3) * 50} thousand, and we'd like to start next month.` : "I'd rather not say.", timeInCallSecs: 14 },

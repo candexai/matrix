@@ -33,7 +33,7 @@ export function DetailsPanel({ c }: { c: Conversation }) {
   return (
     <div className="space-y-7">
       <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-        <Row label="ElevenLabs conversation ID" value={c.elevenConversationId} mono copy />
+        <Row label="Candex conversation ID" value={c.elevenConversationId} mono copy />
         <Row label="Agent ID" value={c.elevenAgentId} mono copy />
         <Row label="Termination reason" value={titleCase(c.terminationReason)} />
         <Row label="Batch call ID" value={c.batchCallId} mono copy />

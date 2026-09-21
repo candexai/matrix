@@ -22,7 +22,7 @@ function BalanceChip() {
     return (
       <Link href="/integrations" className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-[13.5px] text-muted-foreground hover:bg-muted">
         <Coins className="size-4 text-primary" />
-        Connect ElevenLabs
+        Connect Candex
       </Link>
     );
   }

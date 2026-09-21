@@ -23,8 +23,8 @@ export function PrivacySection({ cfg, set, catalog, errors }: SectionProps) {
   const toggleEvent = (ev: string, on: boolean) => set("post_call_webhook_events", on ? Array.from(new Set([...cfg.post_call_webhook_events, ev])) : cfg.post_call_webhook_events.filter((x) => x !== ev));
 
   return (
-    <SectionCard id="privacy" title="Privacy, limits & webhook" description="Recording, retention, usage caps and what ElevenLabs sends back after each call." icon={Shield}>
-      <SwitchRow label="Record calls" help="Store audio in ElevenLabs so you can listen back from Conversations." checked={cfg.record_voice} onCheckedChange={(v) => set("record_voice", v)} />
+    <SectionCard id="privacy" title="Privacy, limits & webhook" description="Recording, retention, usage caps and what Candex sends back after each call." icon={Shield}>
+      <SwitchRow label="Record calls" help="Store audio in Candex so you can listen back from Conversations." checked={cfg.record_voice} onCheckedChange={(v) => set("record_voice", v)} />
 
       <div className="grid gap-5 md:grid-cols-3">
         <NumberField label="Retention" value={cfg.retention_days} onChange={(v) => set("retention_days", v ?? -1)} min={-1} max={3650} suffix="days" error={errors.retention_days} help={cfg.retention_days < 0 ? "-1 = keep transcripts & audio forever." : `Deleted after ${cfg.retention_days} day${cfg.retention_days === 1 ? "" : "s"}.`} />
@@ -33,11 +33,11 @@ export function PrivacySection({ cfg, set, catalog, errors }: SectionProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <SubHeading title="Post-call webhook" description="Delivers the transcript, summary, collected data and evaluation to Matrix as soon as the call ends." />
+        <SubHeading title="Post-call webhook" description="Delivers the transcript, summary, collected data and evaluation to Pilot as soon as the call ends." />
         <SwitchRow
           label={
             <span className="inline-flex items-center gap-1.5">
-              <Webhook className="size-3.5 text-primary" /> Send post-call events to Matrix
+              <Webhook className="size-3.5 text-primary" /> Send post-call events to Pilot
             </span>
           }
           help="Turning this off means conversations only appear after a manual sync."
@@ -65,12 +65,12 @@ export function PrivacySection({ cfg, set, catalog, errors }: SectionProps) {
               {url ? <CopyButton value={url} label="Copy webhook URL" className="border border-border bg-card size-9" /> : null}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">Registered automatically in your ElevenLabs workspace when you save with the webhook enabled.</p>
+          <p className="text-xs text-muted-foreground">Registered automatically in your Candex workspace when you save with the webhook enabled.</p>
           {insecure ? (
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
               <TriangleAlert className="mt-0.5 size-4 shrink-0" />
               <span>
-                ElevenLabs can only deliver webhooks to a public <strong>https</strong> URL. Run <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">ngrok http 5001</code> and set <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">PUBLIC_BACKEND_URL</code> in <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">backend/.env</code>, then restart the backend.
+                Candex can only deliver webhooks to a public <strong>https</strong> URL. Run <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">ngrok http 5001</code> and set <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">PUBLIC_BACKEND_URL</code> in <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">backend/.env</code>, then restart the backend.
               </span>
             </div>
           ) : null}

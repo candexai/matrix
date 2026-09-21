@@ -189,7 +189,7 @@ export function useSyncAgent() {
     onSuccess: (a) => {
       qc.invalidateQueries({ queryKey: ["agents"] });
       qc.setQueryData(["agents", a._id], a);
-      toast.success("Pulled latest settings from ElevenLabs");
+      toast.success("Pulled latest settings from Candex");
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -491,7 +491,7 @@ export function useSyncConversations() {
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["conversations"] });
       qc.invalidateQueries({ queryKey: ["leads"] });
-      toast.success(`Synced ${r.upserted} conversation${r.upserted === 1 ? "" : "s"} from ElevenLabs`);
+      toast.success(`Synced ${r.upserted} conversation${r.upserted === 1 ? "" : "s"} from Candex`);
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -619,7 +619,7 @@ export function useConnectEleven() {
       qc.setQueryData(["elevenlabs", "status"], s);
       qc.invalidateQueries({ queryKey: ["integrations"] });
       invalidateElevenDependents(qc);
-      toast.success("ElevenLabs connected");
+      toast.success("Candex connected");
     },
     // Errors (e.g. ELEVENLABS_INVALID_KEY) are shown inline by ElevenLabsConnectDialog — no toast here.
   });
@@ -632,7 +632,7 @@ export function useDisconnectEleven() {
       qc.setQueryData(["elevenlabs", "status"], s);
       qc.invalidateQueries({ queryKey: ["integrations"] });
       invalidateElevenDependents(qc);
-      toast.success(s.source === "env" ? "Your key was removed — using the server key again" : "ElevenLabs disconnected");
+      toast.success(s.source === "env" ? "Your key was removed — using the server key again" : "Candex disconnected");
     },
     onError: (e) => toast.error(errorMessage(e)),
   });

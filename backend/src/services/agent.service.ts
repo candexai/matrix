@@ -239,7 +239,7 @@ export async function importRemoteAgent(workspaceId: string, elevenAgentId: stri
   if (existing) {
     if (existing.workspaceId === workspaceId) return existing;
     // elevenAgentId is unique across Matrix: an agent can be linked to one workspace only.
-    throw new HttpError(409, "This ElevenLabs agent is already linked to another Matrix workspace", "AGENT_ALREADY_LINKED");
+    throw new HttpError(409, "This agent is already linked to another Pilot workspace", "AGENT_ALREADY_LINKED");
   }
   const client = await getElevenClient(workspaceId);
   const remote: RemoteAgent = await client.getAgent(elevenAgentId);

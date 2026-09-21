@@ -94,7 +94,7 @@ export function ZohoAppDialog({ open, onOpenChange }: { open: boolean; onOpenCha
                 and sign in with your Zoho account (any CRM user can create a client).
               </li>
               <li>
-                <strong>Add Client → Server-based Applications</strong>. Client name: anything (e.g. Matrix). Homepage URL: this site.
+                <strong>Add Client → Server-based Applications</strong>. Client name: anything (e.g. Pilot). Homepage URL: this site.
               </li>
               <li>
                 <strong>Authorized Redirect URIs</strong> — paste exactly:

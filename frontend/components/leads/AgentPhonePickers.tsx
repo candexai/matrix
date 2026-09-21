@@ -114,12 +114,12 @@ export function PhonePicker({
       ) : error ? (
         <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
-          <span>Could not load phone numbers from ElevenLabs: {errorMessage(error)}</span>
+          <span>Could not load phone numbers from Candex: {errorMessage(error)}</span>
         </div>
       ) : !outbound.length ? (
         <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
-          <span>No outbound numbers found. Import a Twilio/SIP number in ElevenLabs, then refresh.</span>
+          <span>No outbound numbers found. Import a Twilio/SIP number in Candex, then refresh.</span>
         </div>
       ) : (
         <Select value={value} onValueChange={onChange}>

@@ -62,11 +62,11 @@ export default function AgentsPage() {
     <div className="flex flex-1 flex-col">
       <PageHeader
         title="Voice Agents"
-        description="ElevenLabs conversational agents that call and qualify your leads."
+        description="Candex conversational agents that call and qualify your leads."
         actions={
           <>
             <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Download /> Import from ElevenLabs
+              <Download /> Import from Candex
             </Button>
             <Link href="/agents/new" className={buttonVariants()}>
               <Plus /> New agent
@@ -113,14 +113,14 @@ export default function AgentsPage() {
           <EmptyState
             icon={AudioWaveform}
             title="No voice agents yet"
-            description="Create your first agent from scratch, or import one you already built in ElevenLabs."
+            description="Create your first agent from scratch, or import one you already built in Candex."
             action={
               <div className="flex flex-wrap justify-center gap-2">
                 <Link href="/agents/new" className={buttonVariants()}>
                   <Plus /> New agent
                 </Link>
                 <Button variant="outline" onClick={() => setImportOpen(true)}>
-                  <Download /> Import from ElevenLabs
+                  <Download /> Import from Candex
                 </Button>
               </div>
             }
@@ -150,7 +150,7 @@ export default function AgentsPage() {
         open={Boolean(toDelete)}
         onOpenChange={(o) => (!o ? setToDelete(null) : undefined)}
         title={`Delete “${toDelete?.name ?? "agent"}”?`}
-        description="This removes the agent from Matrix and from your ElevenLabs workspace. Past conversations are kept."
+        description="This removes the agent from Pilot and from your Candex workspace. Past conversations are kept."
         confirmLabel="Delete agent"
         destructive
         loading={del.isPending}

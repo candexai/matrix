@@ -112,7 +112,7 @@ export function IntegrationsPage() {
 
 function HowSyncingWorks() {
   const steps = [
-    { icon: Plug, title: "Connect Zoho CRM", body: "Authorize Matrix once with your Zoho account. We only request access to the Leads module." },
+    { icon: Plug, title: "Connect Zoho CRM", body: "Authorize Pilot once with your Zoho account. We only request access to the Leads module." },
     { icon: RefreshCw, title: "Sync now", body: "Pulls every lead (and all its fields) into My Leads. Later syncs only fetch what changed." },
     { icon: AudioWaveform, title: "Attach a voice agent", body: "The agent calls your leads. After each call, empty fields are filled from the collected answers and written back to Zoho." },
   ];

@@ -81,7 +81,7 @@ export function AudioPlayer({ src, fallbackDuration }: { src: string; fallbackDu
         onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => captureDuration(e.currentTarget)}
         onDurationChange={(e) => captureDuration(e.currentTarget)}
-        onError={() => setError("Recording unavailable — it may still be processing on ElevenLabs.")}
+        onError={() => setError("Recording unavailable — it may still be processing on Candex.")}
       />
       <div className="mb-3 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         <AudioLines className="size-3.5 text-primary" /> Recording

@@ -1,4 +1,4 @@
-# Operations runbook — Matrix × CandexAI
+# Operations runbook — Pilot × CandexAI (repo/process names: matrix)
 
 Server: `root@37.60.249.35` (Ubuntu 24.04) · Domain: **https://edu.candexai.co.in** · Code: `/opt/matrix` (git clone of `candexai/matrix`, branch `main`)
 

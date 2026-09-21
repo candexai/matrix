@@ -1,4 +1,5 @@
 import { Globe, Mail, Send } from "lucide-react";
+import { CANDEX_LOGO_SRC } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /** Small, self-contained brand marks (no external images). Each renders a 40×40 tile. */
@@ -60,11 +61,9 @@ function PipedriveIcon({ className }: IconProps) {
 
 function ElevenLabsIcon({ className }: IconProps) {
   return (
-    <div className={cn(tile, "bg-black dark:bg-white", className)}>
-      <svg viewBox="0 0 32 32" className="size-6" aria-hidden>
-        <rect x="9" y="7" width="4.5" height="18" rx="1" className="fill-white dark:fill-black" />
-        <rect x="18.5" y="7" width="4.5" height="18" rx="1" className="fill-white dark:fill-black" />
-      </svg>
+    <div className={cn(tile, "bg-white ring-1 ring-border", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={CANDEX_LOGO_SRC} alt="" className="size-7 object-contain" />
     </div>
   );
 }

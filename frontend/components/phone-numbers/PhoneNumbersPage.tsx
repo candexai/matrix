@@ -84,7 +84,7 @@ export function PhoneNumbersPage() {
     <div className="flex flex-1 flex-col">
       <PageHeader title="Phone Numbers" description={DESCRIPTION} actions={importButtons}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[13px] text-muted-foreground">Numbers are stored in your ElevenLabs workspace; Matrix reads them live.</p>
+          <p className="text-[13px] text-muted-foreground">Numbers are stored in your Candex workspace; Pilot reads them live.</p>
           {numbers.isSuccess ? (
             <div className="flex items-center gap-3 text-[13px] text-muted-foreground">
               <span>
@@ -103,11 +103,11 @@ export function PhoneNumbersPage() {
           <TableSkeleton />
         ) : numbers.isError ? (
           isElevenNotConfigured(numbers.error) ? (
-            <ElevenLabsRequired description="Phone numbers live in your ElevenLabs account. Connect it in Integrations to import Twilio numbers or SIP trunks here." />
+            <ElevenLabsRequired description="Phone numbers live in your Candex account. Connect it in Integrations to import Twilio numbers or SIP trunks here." />
           ) : (
             <EmptyState
               icon={TriangleAlert}
-              title="Couldn't reach ElevenLabs"
+              title="Couldn't reach Candex"
               description={errorMessage(numbers.error)}
               action={
                 <Button variant="outline" onClick={() => numbers.refetch()} loading={numbers.isFetching}>
@@ -132,7 +132,7 @@ export function PhoneNumbersPage() {
         title={`Remove ${removing?.phone_number ?? "number"}?`}
         description={
           removing
-            ? `This detaches the number from your ElevenLabs workspace${removing.assigned_agent ? ` and unassigns it from ${removing.assigned_agent.agent_name}` : ""}. ${providerMeta(removing.provider).label === "Twilio" ? "The number stays in your Twilio account." : "Your SIP trunk configuration is deleted; your carrier isn't affected."} Past conversations are kept.`
+            ? `This detaches the number from your Candex workspace${removing.assigned_agent ? ` and unassigns it from ${removing.assigned_agent.agent_name}` : ""}. ${providerMeta(removing.provider).label === "Twilio" ? "The number stays in your Twilio account." : "Your SIP trunk configuration is deleted; your carrier isn't affected."} Past conversations are kept.`
             : undefined
         }
         confirmLabel="Remove number"

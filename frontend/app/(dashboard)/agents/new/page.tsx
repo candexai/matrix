@@ -10,7 +10,7 @@ export default function NewAgentPage() {
     <div className="flex flex-1 flex-col">
       <PageHeader
         title="New voice agent"
-        description="Configure how the agent sounds, what it says and what it collects. Saved straight to ElevenLabs."
+        description="Configure how the agent sounds, what it says and what it collects. Saved straight to Candex."
         actions={
           <Link href="/agents" className={buttonVariants({ variant: "ghost", size: "sm" })}>
             <ArrowLeft /> All agents

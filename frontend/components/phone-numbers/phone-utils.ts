@@ -7,7 +7,7 @@ export type Transport = NonNullable<SipTrunkConfig["transport"]>;
 export type Encryption = NonNullable<SipTrunkConfig["media_encryption"]>;
 
 export const TRANSPORT_OPTIONS: { value: Transport; label: string; description: string }[] = [
-  { value: "auto", label: "Auto", description: "Let ElevenLabs negotiate" },
+  { value: "auto", label: "Auto", description: "Let Candex negotiate" },
   { value: "udp", label: "UDP", description: "Port 5060, most carriers" },
   { value: "tcp", label: "TCP", description: "Port 5060, reliable signalling" },
   { value: "tls", label: "TLS", description: "Port 5061, encrypted signalling" },

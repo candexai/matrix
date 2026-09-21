@@ -176,7 +176,7 @@ export function AttachAgentDialog({ open, onOpenChange, listId, listName, zohoCo
           </section>
 
           <section>
-            <StepHeading n={2} title="Outbound number" hint="ElevenLabs phone number the agent calls from" />
+            <StepHeading n={2} title="Outbound number" hint="Candex phone number the agent calls from" />
             <PhonePicker numbers={phones.data} loading={phones.isLoading} error={phones.error} value={phoneNumberId} onChange={setPhoneNumberId} />
           </section>
 

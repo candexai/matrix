@@ -12,7 +12,7 @@ async function main() {
   const db = await connectDatabase();
   const app = createApp();
   app.listen(env.PORT, async () => {
-    console.log(`\n  Matrix x CandexAI backend  →  http://localhost:${env.PORT}`);
+    console.log(`\n  Pilot x CandexAI backend  →  http://localhost:${env.PORT}`);
     console.log(`  Database     : ${db.mode === "atlas" ? "✓ MongoDB Atlas" : "⚠ local fallback (Atlas unreachable) – data in ~/.matrix/mongo-data"}`);
     console.log(`  ElevenLabs   : per-workspace keys (Integrations → ElevenLabs); env key for legacy "${env.DEFAULT_WORKSPACE_ID}" workspace: ${envElevenConfigured() ? "✓ " + env.ELEVENLABS_BASE_URL : "✗ not set"}`);
     console.log(`  Python svc   : ${pythonService.configured ? env.ELEVENLABS_SERVICE_URL + " (env-key workspace only; direct API otherwise)" : "not configured"}`);

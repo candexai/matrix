@@ -41,7 +41,7 @@ const LLM = "__llm__";
 const CUSTOM = "__custom__";
 /** Variables Matrix injects on every lead call (backend calls.service leadDynamicVariables). */
 const DV_LEAD: { value: string; description: string }[] = [
-  { value: "lead_id", description: "Matrix lead ID" },
+  { value: "lead_id", description: "Pilot lead ID" },
   { value: "name", description: "Lead's full name" },
   { value: "first_name", description: "Lead's first name" },
   { value: "phone", description: "Lead's phone number" },
@@ -56,8 +56,8 @@ const DV_LEAD: { value: string; description: string }[] = [
 const DV_SYSTEM: { value: string; description: string }[] = [
   { value: "system__caller_id", description: "Phone number of the caller" },
   { value: "system__called_number", description: "Number that was dialled" },
-  { value: "system__conversation_id", description: "ElevenLabs conversation ID" },
-  { value: "system__agent_id", description: "ElevenLabs agent ID" },
+  { value: "system__conversation_id", description: "Candex conversation ID" },
+  { value: "system__agent_id", description: "Candex agent ID" },
   { value: "system__time_utc", description: "Call start time (UTC)" },
 ];
 const DV_KNOWN = new Set([...DV_LEAD, ...DV_SYSTEM].map((d) => d.value));
@@ -223,7 +223,7 @@ function ToolForm({ tool, onSaved, onClose }: { tool?: HttpTool; onSaved: (tool:
     <>
       <DialogHeader>
         <DialogTitle>{tool ? "Edit HTTP tool" : "New HTTP tool"}</DialogTitle>
-        <DialogDescription>The agent calls this endpoint mid-call whenever it decides the tool applies. Stored in your ElevenLabs workspace and reusable by every agent.</DialogDescription>
+        <DialogDescription>The agent calls this endpoint mid-call whenever it decides the tool applies. Stored in your Candex workspace and reusable by every agent.</DialogDescription>
       </DialogHeader>
       <DialogBody>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -316,7 +316,7 @@ function ToolForm({ tool, onSaved, onClose }: { tool?: HttpTool; onSaved: (tool:
         </div>
       </DialogBody>
       <DialogFooter>
-        <span className="mr-auto text-xs text-muted-foreground">{submitted && Object.keys(errors).length ? <span className="text-destructive">{Object.keys(errors).length} issue{Object.keys(errors).length === 1 ? "" : "s"} to fix</span> : "Saved to your ElevenLabs workspace."}</span>
+        <span className="mr-auto text-xs text-muted-foreground">{submitted && Object.keys(errors).length ? <span className="text-destructive">{Object.keys(errors).length} issue{Object.keys(errors).length === 1 ? "" : "s"} to fix</span> : "Saved to your Candex workspace."}</span>
         <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
@@ -459,7 +459,7 @@ function ParamCard({ p, index, errors, onChange, onRemove }: { p: ParamDraft; in
                   ))}
                 </SelectGroup>
                 <SelectGroup>
-                  <SelectLabel>Dynamic variable · ElevenLabs system</SelectLabel>
+                  <SelectLabel>Dynamic variable · Candex system</SelectLabel>
                   {DV_SYSTEM.map((v) => (
                     <SelectItem key={v.value} value={v.value} description={v.description}>
                       {v.value}

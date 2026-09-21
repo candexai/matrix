@@ -71,8 +71,8 @@ export function CallPanel({ call, agent, dynamicVariables }: { call: Call; agent
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["conversations"] });
       qc.invalidateQueries({ queryKey: ["agents"] });
-      if (r.upserted > 0) toast.success(`Synced ${r.upserted} conversation${r.upserted === 1 ? "" : "s"} from ElevenLabs`);
-      else toast.info("Nothing new yet — ElevenLabs may still be processing the call. Try again in a few seconds.");
+      if (r.upserted > 0) toast.success(`Synced ${r.upserted} conversation${r.upserted === 1 ? "" : "s"} from Candex`);
+      else toast.info("Nothing new yet — Candex may still be processing the call. Try again in a few seconds.");
     },
     onError: (e) => toast.error(errorMessage(e)),
   });
@@ -193,12 +193,12 @@ export function CallPanel({ call, agent, dynamicVariables }: { call: Call; agent
         <div className="rounded-xl border border-border bg-card p-5 shadow-xs animate-fade-up">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm font-medium">Conversation recorded in ElevenLabs</div>
+              <div className="text-sm font-medium">Conversation recorded in Candex</div>
               <div className="mt-1 inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 py-0.5 pl-2 pr-0.5 font-mono text-xs">
                 {conversationId}
                 <CopyButton value={conversationId} label="Copy conversation ID" size="xs" />
               </div>
-              <p className="mt-2 max-w-md text-xs text-muted-foreground">{autoSaved ? "Saved to Conversations with transcript and analysis." : "Saving to Conversations automatically once ElevenLabs finishes processing (a few seconds)…"}</p>
+              <p className="mt-2 max-w-md text-xs text-muted-foreground">{autoSaved ? "Saved to Conversations with transcript and analysis." : "Saving to Conversations automatically once Candex finishes processing (a few seconds)…"}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               <Button variant="outline" onClick={() => syncMut.mutate()} loading={syncMut.isPending} disabled={!agent}>

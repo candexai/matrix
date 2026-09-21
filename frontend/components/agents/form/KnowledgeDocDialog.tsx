@@ -123,7 +123,7 @@ function DocForm({ onAdded, onClose }: { onAdded: (doc: { id: string; name: stri
     <>
       <DialogHeader>
         <DialogTitle>Add document</DialogTitle>
-        <DialogDescription>Documents are stored in your ElevenLabs workspace and can be reused by every agent. The agent answers from them using RAG.</DialogDescription>
+        <DialogDescription>Documents are stored in your Candex workspace and can be reused by every agent. The agent answers from them using RAG.</DialogDescription>
       </DialogHeader>
       <DialogBody>
         <Tabs value={kind} onValueChange={(v) => switchKind(v as Kind)}>

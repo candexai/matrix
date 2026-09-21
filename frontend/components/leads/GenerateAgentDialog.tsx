@@ -169,7 +169,7 @@ function ErrorBox({ error, onRetry, title = "Generation failed" }: { error: ApiE
     >
       {setupIssue ? <KeyRound className="mt-0.5 size-4 shrink-0" /> : <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />}
       <div className="min-w-0 flex-1">
-        <div className="font-medium">{notConfigured ? "OpenAI is not configured on the backend" : elevenMissing ? "ElevenLabs is not connected to this workspace" : title}</div>
+        <div className="font-medium">{notConfigured ? "OpenAI is not configured on the backend" : elevenMissing ? "Candex is not connected to this workspace" : title}</div>
         <p className="mt-0.5 text-[13px] opacity-90">{error.message}</p>
         {notConfigured ? (
           <p className="mt-2 text-[13px]">
@@ -178,7 +178,7 @@ function ErrorBox({ error, onRetry, title = "Generation failed" }: { error: ApiE
         ) : elevenMissing ? (
           <p className="mt-2 text-[13px]">
             <Link href="/integrations" className="font-medium underline underline-offset-2">
-              Connect ElevenLabs in Integrations
+              Connect Candex in Integrations
             </Link>
             , then try again.
           </p>
@@ -475,7 +475,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
         onSuccess: (r) => {
           setPhase(null);
           if (r.agent) setCreated({ agent: r.agent, binding: r.binding });
-          else setCreateError({ code: "NO_AGENT", message: "The backend returned no agent. Check the ElevenLabs configuration and try again." });
+          else setCreateError({ code: "NO_AGENT", message: "The backend returned no agent. Check the Candex configuration and try again." });
         },
         onError: (e) => {
           setCreateError(e as unknown as ApiError);
@@ -499,7 +499,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
         ? `${checked.size} column${checked.size === 1 ? "" : "s"} to collect · dry run, nothing is created yet`
         : step === 2
           ? "Edit anything — the agent is only created in the next step"
-          : "Creates the agent on ElevenLabs and attaches it — takes a few seconds";
+          : "Creates the agent on Candex and attaches it — takes a few seconds";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -517,7 +517,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
 
         <DialogBody>
           {elevenMissing && !created && !generating ? (
-            <ElevenLabsRequiredNotice className="mb-5">in Integrations first — the agent is created in your ElevenLabs account, and its voice and phone number come from there.</ElevenLabsRequiredNotice>
+            <ElevenLabsRequiredNotice className="mb-5">in Integrations first — the agent is created in your Candex account, and its voice and phone number come from there.</ElevenLabsRequiredNotice>
           ) : null}
           {created ? (
             <DoneState created={created} tableName={tableName} isAll={isAll} />
@@ -741,7 +741,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
               <section>
                 <SectionHeading
                   title="Evaluation criteria"
-                  hint="Outcomes ElevenLabs grades after every call"
+                  hint="Outcomes Candex grades after every call"
                   action={
                     <Button type="button" variant="outline" size="sm" onClick={addCriterion} disabled={draft.evaluation_criteria.length >= 4}>
                       <Plus /> Add criterion
@@ -786,7 +786,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
                   ) : !sortedVoices.length ? (
                     <div className="flex items-start gap-2 rounded-md border border-dashed border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
                       <MicVocal className="mt-0.5 size-4 shrink-0 text-primary" />
-                      <span>No voices returned by ElevenLabs. The backend will pick a default premade voice for {languageLabel}.</span>
+                      <span>No voices returned by Candex. The backend will pick a default premade voice for {languageLabel}.</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -882,7 +882,7 @@ export function GenerateAgentDialog({ open, onOpenChange, listId, listName, zoho
                   <li className="flex items-start gap-2.5">
                     <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
                     <span>
-                      Creates <span className="font-medium">{draft.name || "the agent"}</span> on ElevenLabs with the reviewed prompt, first message and voice.
+                      Creates <span className="font-medium">{draft.name || "the agent"}</span> on Candex with the reviewed prompt, first message and voice.
                     </span>
                   </li>
                   <li className="flex items-start gap-2.5">
@@ -981,7 +981,7 @@ function DoneState({ created, tableName, isAll }: { created: { agent: Agent; bin
       <div className="max-w-md">
         <h3 className="font-heading text-2xl leading-tight">“{created.agent.name}” is ready</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Created on ElevenLabs and attached {isAll ? "as the default agent" : `to ${tableName}`}. Calls {isAll ? "from every table without its own agent" : "from this table"} now use it
+          Created on Candex and attached {isAll ? "as the default agent" : `to ${tableName}`}. Calls {isAll ? "from every table without its own agent" : "from this table"} now use it
           {fields ? ` and collect ${fields} field${fields === 1 ? "" : "s"}` : ""}.
         </p>
       </div>

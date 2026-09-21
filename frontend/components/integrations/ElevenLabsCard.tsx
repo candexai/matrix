@@ -52,7 +52,7 @@ export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
   const refresh = async () => {
     const r = await status.refetch();
     if (r.error) toast.error(errorMessage(r.error));
-    else toast.message("ElevenLabs status refreshed");
+    else toast.message("Candex status refreshed");
   };
 
   if (status.isLoading) {
@@ -81,7 +81,7 @@ export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
       >
         <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-[13px]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
-          <span>{status.error ? errorMessage(status.error) : "Could not load ElevenLabs status."}</span>
+          <span>{status.error ? errorMessage(status.error) : "Could not load Candex status."}</span>
         </div>
       </IntegrationCardShell>
     );
@@ -98,14 +98,14 @@ export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
         footer={
           <>
             <Button size="sm" onClick={() => setDialog("connect")}>
-              <KeyRound /> Connect ElevenLabs
+              <KeyRound /> Connect Candex
             </Button>
-            <span className="text-xs text-muted-foreground">Paste an API key from your ElevenLabs account — about a minute.</span>
+            <span className="text-xs text-muted-foreground">Paste an API key from your Candex account — about a minute.</span>
           </>
         }
       >
         <div className="space-y-2 text-[13px]">
-          <p className="text-muted-foreground">Bring your own ElevenLabs account: agents, voices, phone numbers and calls run through it and count towards its plan.</p>
+          <p className="text-muted-foreground">Bring your own Candex account: agents, voices, phone numbers and calls run through it and count towards its plan.</p>
           <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
             <Info className="mt-0.5 size-4 shrink-0" />
             <div>No API key is connected to this workspace yet. Voice Agents, Phone Numbers and AI Test stay locked until you add one.</div>
@@ -167,7 +167,7 @@ export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
           <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[13px]">
             <div className="flex flex-wrap items-center gap-2">
               <User className="size-3.5 text-muted-foreground" />
-              <span className="font-medium">{acct?.name || "ElevenLabs account"}</span>
+              <span className="font-medium">{acct?.name || "Candex account"}</span>
               {acct?.tier ? <Badge variant="soft">{titleCase(acct.tier)}</Badge> : null}
               {s.connectedAt ? (
                 <Tip label={formatDateTime(s.connectedAt)}>
@@ -196,14 +196,6 @@ export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
             <dd className="truncate text-right font-mono text-[12px]">{s.keyHint ?? "••••"}</dd>
             <dt className="text-muted-foreground">Region</dt>
             <dd className="text-right">{s.region ? REGION_LABEL[s.region] : "—"}</dd>
-            {s.baseUrl ? (
-              <>
-                <dt className="text-muted-foreground">API base</dt>
-                <dd className="truncate text-right font-mono text-[12px]" title={s.baseUrl}>
-                  {s.baseUrl.replace(/^https?:\/\//, "")}
-                </dd>
-              </>
-            ) : null}
           </dl>
         </div>
       </IntegrationCardShell>
@@ -212,8 +204,8 @@ export function ElevenLabsCard({ item }: { item: IntegrationItem }) {
       <ConfirmDialog
         open={confirmDisconnect}
         onOpenChange={(o) => (!disconnect.isPending ? setConfirmDisconnect(o) : undefined)}
-        title="Disconnect ElevenLabs?"
-        description="Removes the API key from this workspace. Your agents, phone numbers and voices stay in your ElevenLabs account — they just disappear from Matrix until you reconnect. Conversations already stored here are kept."
+        title="Disconnect Candex?"
+        description="Removes the API key from this workspace. Your agents, phone numbers and voices stay in your Candex account — they just disappear from Pilot until you reconnect. Conversations already stored here are kept."
         confirmLabel="Disconnect"
         destructive
         loading={disconnect.isPending}

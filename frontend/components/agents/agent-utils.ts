@@ -33,6 +33,12 @@ export function ttsIncompatibleReason(model: TtsModelOption, language: string, l
   return `${model.label} does not support ${current}.`;
 }
 
+/** Display name of a voice model. Models outside the catalog (e.g. on imported agents) show the generic brand name, never the raw upstream id. */
+export function ttsModelLabel(models: readonly CatalogOption[] | undefined, value: string | null | undefined): string {
+  if (!value) return "—";
+  return models?.find((m) => m.value === value)?.label ?? "Candex AI";
+}
+
 export function optionLabel(options: readonly CatalogOption[] | undefined, value: string | null | undefined, fallback = "—"): string {
   if (!value) return fallback;
   return options?.find((o) => o.value === value)?.label ?? value;
